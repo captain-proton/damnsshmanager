@@ -7,6 +7,8 @@ from errno import EINTR
 
 def test(host: Host):
     errors = []
+    # number of successful created sockets
+    num_sockets = 0
     for res in socket.getaddrinfo(host.addr, host.port, socket.AF_UNSPEC,
                                   socket.SOCK_STREAM):
         af, socktype, proto, canonname, sa = res
@@ -17,6 +19,8 @@ def test(host: Host):
         # print('       sa: %s' % str(sa))
         try:
             s = socket.socket(af, socktype, proto)
+            s.settimeout(1)
+            num_sockets += 1
         except OSError as msg:
             errors.append(msg)
             s = None
@@ -26,7 +30,9 @@ def test(host: Host):
             except OSError as msg:
                 errors.append(msg)
                 s.close()
-    if len(errors) > 0:
+    # a connection could not be established if an error was created for
+    # each created socket
+    if len(errors) >= num_sockets:
         raise OSError({'msg': 'could not open socket',
                        'errors': errors})
 
