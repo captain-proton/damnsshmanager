@@ -27,6 +27,15 @@ def list_hosts():
             __log_host_info(h, 'DOWN', status_color='\x1b[0;30;41m')
 
 
+def connect(args):
+    host = db.get_host(args.alias)
+    if host is None:
+        print('no host with alias "%s"' % args.alias)
+        return
+
+    ssh.connect(host)
+
+
 def __log_host_info(host: db.Host, status: str, status_color=None):
     msg = '[{color}{status:^10s}{end_color}] {alias:>15s}' \
           ' => \x1b[0;33m{username:s}\x1b[0m' \
@@ -61,7 +70,9 @@ def main():
 
     sub_parsers = parser.add_subparsers()
 
-    add_parser = sub_parsers.add_parser('add')
+    add_parser = sub_parsers.add_parser('add',
+                                        help='add new aliases by providing'
+                                             ' alias and host names')
     add_parser.add_argument('alias', type=str,
                             help='unique identifier to use to add/del/connect')
     add_parser.add_argument('addr', type=str,
@@ -75,18 +86,28 @@ def main():
                                  ' (22 by default)')
     add_parser.set_defaults(func=add)
 
-    del_parser = sub_parsers.add_parser('del')
+    del_parser = sub_parsers.add_parser('del',
+                                        help='throw away all the garbage')
     del_parser.add_argument('alias', type=str,
-                            help='unique identifier to use to add/del/connect')
+                            help='unique identifier to use to del')
     del_parser.set_defaults(func=delete)
 
+    connect_parser = sub_parsers.add_parser('c', help='connect to one of'
+                                                      ' your saved hosts'
+                                                      ' by providing the alias')
+    connect_parser.add_argument('alias', type=str,
+                                help='unique identifier to use to connect')
+    connect_parser.set_defaults(func=connect)
+
     args = parser.parse_args()
-    if len(vars(args).keys()) == 0:
+    num_args = len(vars(args).keys())
+    if num_args == 0:
         list_hosts()
         print('')
         __log_heading('Commands')
         add_parser.print_usage()
         del_parser.print_usage()
+        connect_parser.print_usage()
     else:
         args.func(args)
 

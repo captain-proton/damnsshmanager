@@ -60,11 +60,11 @@ def delete(alias: str):
 
     with open(_saved_hosts_file, 'wb') as f:
         new_hosts = [h for h in hosts if h.alias != alias]
+        pickle.dump(new_hosts, f)
         if len(hosts) != len(new_hosts):
-            print('removing host with alias "%s"' % alias)
+            print('removed host with alias "%s"' % alias)
         else:
             print('no host with alias "%s" found' % alias)
-        pickle.dump(new_hosts, f)
 
 
 def get_host(alias: str):

@@ -1,4 +1,6 @@
 import socket
+import subprocess
+
 from damnsshmanager.db import Host
 from errno import EINTR
 
@@ -27,6 +29,12 @@ def test(host: Host):
     if len(errors) > 0:
         raise OSError({'msg': 'could not open socket',
                        'errors': errors})
+
+
+def connect(host: Host):
+    cmd = 'ssh -p {port:d} {user}@{hostname}'
+    cmd = cmd.format(port=host.port, user=host.username, hostname=host.addr)
+    subprocess.call(cmd, shell=True)
 
 
 def retry_on_signal(function):
