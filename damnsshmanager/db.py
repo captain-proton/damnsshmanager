@@ -1,4 +1,5 @@
 import pickle
+import pwd
 import os
 
 from collections import namedtuple
@@ -40,7 +41,11 @@ def add(**kwargs):
     # get arguments (defaults)
     alias = kwargs['alias']
     addr = kwargs['addr']
-    username = __get('username', kwargs, default=os.getlogin())
+    pwuid = pwd.getpwuid((os.getuid()))
+    pw_name = None
+    if len(pwuid) > 0:
+        pw_name = pwuid[0]
+    username = __get('username', kwargs, default=pw_name)
     port = __get('port', kwargs, default=22)
 
     hosts = get_all_hosts()
