@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='damnsshmanager',
-      version='0.1.1',
+      version='0.1.2',
       description='The simplest ssh cli agent one is able to find',
       url='http://github.com/captain-proton/damnsshmanager',
       author='Nils',
