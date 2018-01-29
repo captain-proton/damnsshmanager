@@ -24,18 +24,24 @@ def __get(key, d, default=None):
         return result[0]
 
 
-def add(**kwargs):
+def __test_add_args(**kwargs):
 
     # argument validation
     if 'alias' not in kwargs:
-        print('an "alias" is not required')
-        return
+        return 'an "alias" is required'
     if 'addr' not in kwargs:
-        print('an "addr" is not required')
-        return
+        return 'an "addr" is required'
     host = get_host(kwargs['alias'])
     if host is not None:
-        print('a host with alias "%s" is already present' % host.alias)
+        return 'a host with alias "%s" is already present' % host.alias
+    return None
+
+
+def add(**kwargs):
+
+    err = __test_add_args(**kwargs)
+    if err is not None:
+        print(err)
         return
 
     # get arguments (defaults)
@@ -48,41 +54,41 @@ def add(**kwargs):
     username = __get('username', kwargs, default=pw_name)
     port = __get('port', kwargs, default=22)
 
-    hosts = get_all_hosts()
+    objs = get_all_ssh_objects()
 
     # write new host to pickle file
     with open(_saved_hosts_file, 'wb') as f:
-        if hosts is None:
-            hosts = []
-        hosts.append(Host(alias=alias, addr=addr, username=username,
-                          port=port))
-        pickle.dump(hosts, f)
+        if objs is None:
+            objs = []
+        objs.append(Host(alias=alias, addr=addr, username=username,
+                         port=port))
+        pickle.dump(objs, f)
 
 
 def delete(alias: str):
 
-    hosts = get_all_hosts()
+    objs = get_all_ssh_objects()
 
     with open(_saved_hosts_file, 'wb') as f:
-        new_hosts = [h for h in hosts if h.alias != alias]
+        new_hosts = [h for h in objs if h.alias != alias]
         pickle.dump(new_hosts, f)
-        if len(hosts) != len(new_hosts):
+        if len(objs) != len(new_hosts):
             print('removed host with alias "%s"' % alias)
         else:
             print('no host with alias "%s" found' % alias)
 
 
 def get_host(alias: str):
-    hosts = get_all_hosts()
-    if hosts is not None:
+    objs = get_all_ssh_objects()
+    if objs is not None:
 
-        optional_host = [h for h in hosts if h.alias == alias]
+        optional_host = [h for h in objs if h.alias == alias]
         if len(optional_host) > 0:
             return optional_host[0]
     return None
 
 
-def get_all_hosts() -> list:
+def get_all_ssh_objects() -> list:
     if not os.path.exists(_saved_hosts_file):
         return None
 

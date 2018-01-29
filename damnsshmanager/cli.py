@@ -1,6 +1,6 @@
 import argparse
 
-from damnsshmanager import db, ssh
+from damnsshmanager import db, ssh, messages
 
 
 def add(args):
@@ -13,18 +13,18 @@ def delete(args):
 
 
 def list_hosts():
-    hosts = db.get_all_hosts()
-    if hosts is None:
-        print('no hosts saved')
+    objs = db.get_all_ssh_objects()
+    if objs is None:
+        print('no ssh objects saved')
         return
 
-    __log_heading('Available hosts')
-    for h in hosts:
+    __log_heading('Available ssh objects')
+    for obj in objs:
         try:
-            ssh.test(h)
-            __log_host_info(h, 'UP', status_color='\x1b[6;30;42m')
+            ssh.test(obj)
+            __log_host_info(obj, 'UP', status_color='\x1b[6;30;42m')
         except OSError:
-            __log_host_info(h, 'DOWN', status_color='\x1b[0;30;41m')
+            __log_host_info(obj, 'DOWN', status_color='\x1b[0;30;41m')
 
 
 def connect(args):
@@ -34,6 +34,11 @@ def connect(args):
         return
 
     ssh.connect(host)
+
+
+def ltun(args):
+    args = vars(args)
+    db.ltun(**args)
 
 
 def __log_host_info(host: db.Host, status: str, status_color=None):
@@ -62,41 +67,42 @@ def __log_heading(heading: str):
 
 
 def main():
-    desc = 'This is one simple damn ssh manager. The intend of this thing is' \
-           ' to provide really simple use of the linux command line tool ssh' \
-           ' that is NOT able to provide a ssh managing instance. Of course' \
-           ' that would be named ssh-manager or something.'
-    parser = argparse.ArgumentParser(description=desc)
+    m = messages.Messages()
+    parser = argparse.ArgumentParser(description=m.get('app.desc'))
 
     sub_parsers = parser.add_subparsers()
 
-    add_parser = sub_parsers.add_parser('add',
-                                        help='add new aliases by providing'
-                                             ' alias and host names')
-    add_parser.add_argument('alias', type=str,
-                            help='unique identifier to use to add/del/connect')
+    add_parser = sub_parsers.add_parser('add', help=m.get('add.help'))
+    add_parser.add_argument('alias', type=str, help=m.get('alias.help'))
     add_parser.add_argument('addr', type=str,
-                            help='Any inet address that is used to connect')
+                            help=m.get('addr.help'))
     add_parser.add_argument('-u', '--username', type=str,
-                            help='username parameter to connect to the host.'
-                                 ' By default this is the login name'
-                                 ' (os.getlogin())')
+                            help=m.get('username.help'))
     add_parser.add_argument('-p', '--port', type=int, default=22,
-                            help='port that target host uses for ssh'
-                                 ' (22 by default)')
+                            help=m.get('port.help'))
     add_parser.set_defaults(func=add)
 
-    del_parser = sub_parsers.add_parser('del',
-                                        help='throw away all the garbage')
-    del_parser.add_argument('alias', type=str,
-                            help='unique identifier to use to del')
+    ltun_parser = sub_parsers.add_parser('ltun', help=m.get('ltun.help'))
+    ltun_parser.add_argument('alias', type=str, help=m.get('alias.help'))
+    ltun_parser.add_argument('addr', type=str, help=m.get('addr.help'))
+    ltun_parser.add_argument('local_port', type=int,
+                             help=m.get('local.port.help'))
+    ltun_parser.add_argument('remote_port', type=int,
+                             help=m.get('remote.port.help'))
+    ltun_parser.add_argument('host', type=str, default='localhost',
+                             help=m.get('host.tun.help'))
+    ltun_parser.add_argument('-u', '--username', type=str,
+                             help=m.get('username.help'))
+    ltun_parser.add_argument('-p', '--port', type=int, default=22,
+                             help=m.get('port.help'))
+    ltun_parser.set_defaults(func=ltun)
+
+    del_parser = sub_parsers.add_parser('del', help=m.get('del.help'))
+    del_parser.add_argument('alias', type=str, help=m.get('alias.help'))
     del_parser.set_defaults(func=delete)
 
-    connect_parser = sub_parsers.add_parser('c', help='connect to one of'
-                                                      ' your saved hosts'
-                                                      ' by providing the alias')
-    connect_parser.add_argument('alias', type=str,
-                                help='unique identifier to use to connect')
+    connect_parser = sub_parsers.add_parser('c', help=m.get('connect.help'))
+    connect_parser.add_argument('alias', type=str, help=m.get('alias.help'))
     connect_parser.set_defaults(func=connect)
 
     args = parser.parse_args()

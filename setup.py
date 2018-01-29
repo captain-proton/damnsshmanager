@@ -10,4 +10,7 @@ setup(name='damnsshmanager',
       include_package_data=True,
       license='MIT',
       packages=['damnsshmanager'],
+      package_data={
+          'damnfiles': ['messages.ini'],
+      },
       zip_safe=False)
