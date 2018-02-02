@@ -1,7 +1,8 @@
 import socket
 import subprocess
 
-from damnsshmanager.db import Host
+from damnsshmanager.hosts import Host
+from damnsshmanager.localtunnel import LocalTunnel
 from errno import EINTR
 
 
@@ -37,9 +38,17 @@ def test(host: Host):
                        'errors': errors})
 
 
-def connect(host: Host):
-    cmd = 'ssh -p {port:d} {user}@{hostname}'
-    cmd = cmd.format(port=host.port, user=host.username, hostname=host.addr)
+def connect(host: Host, ltun=None):
+    cmd = 'ssh -p {port:d}'
+    cmd = cmd.format(port=host.port)
+
+    if ltun is not None and isinstance(ltun, LocalTunnel):
+        cmd = ' '.join([cmd, '-L {lport:d}:{tun_addr}:{rport:d}'])
+        cmd = cmd.format(lport=ltun.lport, tun_addr=ltun.tun_addr,
+                         rport=ltun.rport)
+
+    cmd = ' '.join([cmd, '{user}@{hostname}'])
+    cmd = cmd.format(user=host.username, hostname=host.addr)
     subprocess.call(cmd, shell=True)
 
 
