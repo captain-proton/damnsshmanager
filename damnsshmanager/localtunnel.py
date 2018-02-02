@@ -1,10 +1,9 @@
-import pickle
 import os
 import socket
 
 from collections import namedtuple
 from damnsshmanager.config import Config
-from damnsshmanager import hosts
+from damnsshmanager import hosts, storage
 
 
 _saved_objects_file = os.path.join(Config.app_dir, 'localtunnels.pickle')
@@ -63,16 +62,9 @@ def add(**kwargs):
         if lport is 0:
             raise OSError(Config.messages.get('err.no.local.port'))
 
-    objs = get_all_tunnels()
-
-    # write new host to pickle file
-    with open(_saved_objects_file, 'wb') as f:
-        if objs is None:
-            objs = []
-        tun = LocalTunnel(host=host, alias=alias,
-                          lport=lport, tun_addr=tun_addr, rport=rport)
-        objs.append(tun)
-        pickle.dump(objs, f)
+    tun = LocalTunnel(host=host, alias=alias, lport=lport,
+                      tun_addr=tun_addr, rport=rport)
+    if storage.add(_saved_objects_file, tun):
         print(Config.messages.get('added.ltun', tunnel=tun))
 
 
@@ -80,32 +72,19 @@ def get_all_tunnels() -> list:
     if not os.path.exists(_saved_objects_file):
         return None
 
-    with open(_saved_objects_file, 'rb') as f:
-        try:
-            tunnels = pickle.load(f)
-            return tunnels
-        except EOFError:
-            return None
+    return storage.get_all_objects(_saved_objects_file)
 
 
 def delete(alias: str):
 
-    objs = get_all_tunnels()
-
-    with open(_saved_objects_file, 'wb') as f:
-        new_tunnels = [t for t in objs if t.alias != alias]
-        pickle.dump(new_tunnels, f)
-        if len(objs) != len(new_tunnels):
-            print('removed local tunnel with alias "%s"' % alias)
-        else:
-            print('no local tunnel with alias "%s" found' % alias)
+    deleted = storage.delete_objects(_saved_objects_file,
+                                     lambda t: t.alias != alias)
+    if deleted is not None:
+        for t in deleted:
+            print('deleted %s' % str(t))
+    else:
+        print('no tunnel with alias %s' % alias)
 
 
 def get_tunnel(alias: str):
-    objs = get_all_tunnels()
-    if objs is not None:
-
-        tun = [o for o in objs if o.alias == alias]
-        if len(tun) > 0:
-            return tun[0]
-    return None
+    return storage.unique(_saved_objects_file, lambda t: t.alias == alias)

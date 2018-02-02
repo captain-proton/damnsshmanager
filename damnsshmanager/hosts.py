@@ -1,9 +1,9 @@
-import pickle
 import pwd
 import os
 
 from collections import namedtuple
 from damnsshmanager.config import Config
+from damnsshmanager import storage
 
 _saved_objects_file = os.path.join(Config.app_dir, 'hosts.pickle')
 
@@ -50,47 +50,27 @@ def add(**kwargs):
     username = __get('username', kwargs, default=pw_name)
     port = __get('port', kwargs, default=22)
 
-    objs = get_all_hosts()
-
-    # write new host to pickle file
-    with open(_saved_objects_file, 'wb') as f:
-        if objs is None:
-            objs = []
-        objs.append(Host(alias=alias, addr=addr, username=username,
-                         port=port))
-        pickle.dump(objs, f)
+    host = Host(alias=alias, addr=addr, username=username, port=port)
+    storage.add(_saved_objects_file, host)
 
 
 def delete(alias: str):
 
-    objs = get_all_hosts()
-
-    with open(_saved_objects_file, 'wb') as f:
-        new_hosts = [h for h in objs if h.alias != alias]
-        pickle.dump(new_hosts, f)
-        if len(objs) != len(new_hosts):
-            print('removed host with alias "%s"' % alias)
-        else:
-            print('no host with alias "%s" found' % alias)
+    deleted = storage.delete_objects(_saved_objects_file,
+                                     lambda h: h.alias != alias)
+    if deleted is not None:
+        for h in deleted:
+            print('deleted %s' % str(h))
+    else:
+        print('no host with alias "%s"' % alias)
 
 
 def get_host(alias: str):
-    objs = get_all_hosts()
-    if objs is not None:
-
-        host = [o for o in objs if o.alias == alias]
-        if len(host) > 0:
-            return host[0]
-    return None
+    return storage.unique(_saved_objects_file, lambda h: h.alias == alias)
 
 
 def get_all_hosts() -> list:
     if not os.path.exists(_saved_objects_file):
         return None
 
-    with open(_saved_objects_file, 'rb') as f:
-        try:
-            hosts = pickle.load(f)
-            return hosts
-        except EOFError:
-            return None
+    return storage.get_all_objects(_saved_objects_file)
