@@ -3,9 +3,10 @@ import os
 
 from collections import namedtuple
 from damnsshmanager.config import Config
-from damnsshmanager import storage
+from damnsshmanager.storage import Store
 
 _saved_objects_file = os.path.join(Config.app_dir, 'hosts.pickle')
+_store = Store(_saved_objects_file)
 
 Host = namedtuple('Host', 'alias addr username port')
 
@@ -51,13 +52,12 @@ def add(**kwargs):
     port = __get('port', kwargs, default=22)
 
     host = Host(alias=alias, addr=addr, username=username, port=port)
-    storage.add(_saved_objects_file, host)
+    _store.add(host)
 
 
 def delete(alias: str):
 
-    deleted = storage.delete_objects(_saved_objects_file,
-                                     lambda h: h.alias != alias)
+    deleted = _store.delete_objects(lambda h: h.alias != alias)
     if deleted is not None:
         for h in deleted:
             print('deleted %s' % str(h))
@@ -66,11 +66,8 @@ def delete(alias: str):
 
 
 def get_host(alias: str):
-    return storage.unique(_saved_objects_file, lambda h: h.alias == alias)
+    return _store.unique(lambda h: h.alias == alias)
 
 
 def get_all_hosts() -> list:
-    if not os.path.exists(_saved_objects_file):
-        return None
-
-    return storage.get_all_objects(_saved_objects_file)
+    return _store.get_all_objects()

@@ -3,10 +3,11 @@ import socket
 
 from collections import namedtuple
 from damnsshmanager.config import Config
-from damnsshmanager import hosts, storage
+from damnsshmanager.storage import Store
+from damnsshmanager import hosts
 
 
-_saved_objects_file = os.path.join(Config.app_dir, 'localtunnels.pickle')
+_store = Store(os.path.join(Config.app_dir, 'localtunnels.pickle'))
 
 
 LocalTunnel = namedtuple('LocalTunnel', 'host alias lport tun_addr rport')
@@ -64,21 +65,17 @@ def add(**kwargs):
 
     tun = LocalTunnel(host=host, alias=alias, lport=lport,
                       tun_addr=tun_addr, rport=rport)
-    if storage.add(_saved_objects_file, tun):
+    if _store.add(tun):
         print(Config.messages.get('added.ltun', tunnel=tun))
 
 
 def get_all_tunnels() -> list:
-    if not os.path.exists(_saved_objects_file):
-        return None
-
-    return storage.get_all_objects(_saved_objects_file)
+    return _store.get_all_objects()
 
 
 def delete(alias: str):
 
-    deleted = storage.delete_objects(_saved_objects_file,
-                                     lambda t: t.alias != alias)
+    deleted = _store.delete_objects(lambda t: t.alias != alias)
     if deleted is not None:
         for t in deleted:
             print('deleted %s' % str(t))
@@ -87,4 +84,4 @@ def delete(alias: str):
 
 
 def get_tunnel(alias: str):
-    return storage.unique(_saved_objects_file, lambda t: t.alias == alias)
+    return _store.unique(lambda t: t.alias == alias)
