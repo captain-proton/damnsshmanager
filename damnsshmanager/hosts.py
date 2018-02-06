@@ -52,12 +52,14 @@ def add(**kwargs):
     port = __get('port', kwargs, default=22)
 
     host = Host(alias=alias, addr=addr, username=username, port=port)
-    _store.add(host)
+    added = _store.add(host, sort=lambda h: h.alias)
+    if added:
+        print(Config.messages.get('added.host', host=host))
 
 
 def delete(alias: str):
 
-    deleted = _store.delete_objects(lambda h: h.alias != alias)
+    deleted = _store.delete(lambda h: h.alias != alias)
     if deleted is not None:
         for h in deleted:
             print('deleted %s' % str(h))
@@ -66,8 +68,8 @@ def delete(alias: str):
 
 
 def get_host(alias: str):
-    return _store.unique(lambda h: h.alias == alias)
+    return _store.unique(key=lambda h: h.alias == alias)
 
 
 def get_all_hosts() -> list:
-    return _store.get_all_objects()
+    return _store.get()

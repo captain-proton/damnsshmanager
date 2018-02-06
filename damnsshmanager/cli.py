@@ -3,6 +3,7 @@ import argparse
 from damnsshmanager import hosts, ssh
 from damnsshmanager import localtunnel as lt
 from damnsshmanager.config import Config as conf
+from damnsshmanager.storage import UniqueException
 
 __msg = conf.messages
 
@@ -72,16 +73,19 @@ def connect(args):
         host = hosts.get_host(ltun.host)
         ssh.connect(host, ltun=ltun)
     else:
-        host = hosts.get_host(args.alias)
-        ltun = lt.get_tunnel(args.alias)
-        items = [_ for _ in [host, ltun] if _ is not None]
-        if len(items) > 1:
-            print('multiple definitions for alias "%s" found' % args.alias)
-        elif len(items) == 0:
-            print('not item found for alias %s' % args.alias)
-        else:
-            host = host if not ltun else hosts.get_host(ltun.host)
-            ssh.connect(host, ltun=ltun)
+        try:
+            host = hosts.get_host(args.alias)
+            ltun = lt.get_tunnel(args.alias)
+            items = [_ for _ in [host, ltun] if _ is not None]
+            if len(items) > 1:
+                print('multiple definitions for alias "%s" found' % args.alias)
+            elif len(items) == 0:
+                print('not item found for alias %s' % args.alias)
+            else:
+                host = host if not ltun else hosts.get_host(ltun.host)
+                ssh.connect(host, ltun=ltun)
+        except UniqueException as e:
+            print(e.message)
 
 
 def list_objects(args):

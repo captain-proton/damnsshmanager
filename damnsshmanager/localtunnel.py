@@ -36,9 +36,9 @@ def __get_open_port(start=49152, end=65535):
     sock.settimeout(2)
     port = 0
     current_port = start
-    while port is 0:
+    while port == 0:
         result = sock.connect_ex(('127.0.0.1', current_port))
-        if result is 0:
+        if result == 0:
             port = current_port
     sock.close()
     return port
@@ -60,28 +60,28 @@ def add(**kwargs):
         lport = kwargs['local_port']
     else:
         lport = __get_open_port()
-        if lport is 0:
+        if lport == 0:
             raise OSError(Config.messages.get('err.no.local.port'))
 
     tun = LocalTunnel(host=host, alias=alias, lport=lport,
                       tun_addr=tun_addr, rport=rport)
-    if _store.add(tun):
+    if _store.add(tun, sort=lambda t: t.alias):
         print(Config.messages.get('added.ltun', tunnel=tun))
 
 
 def get_all_tunnels() -> list:
-    return _store.get_all_objects()
+    return _store.get()
+
+
+def get_tunnel(alias: str):
+    return _store.unique(key=lambda t: t.alias == alias)
 
 
 def delete(alias: str):
 
-    deleted = _store.delete_objects(lambda t: t.alias != alias)
+    deleted = _store.delete(lambda t: t.alias != alias)
     if deleted is not None:
         for t in deleted:
             print('deleted %s' % str(t))
     else:
         print('no tunnel with alias %s' % alias)
-
-
-def get_tunnel(alias: str):
-    return _store.unique(lambda t: t.alias == alias)
