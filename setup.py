@@ -13,4 +13,5 @@ setup(name='damnsshmanager',
       package_data={
           'damnfiles': ['messages.ini'],
       },
+      python_requires='>=3',
       zip_safe=False)
