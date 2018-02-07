@@ -11,7 +11,7 @@ setup(name='damnsshmanager',
       license='MIT',
       packages=['damnsshmanager'],
       package_data={
-          'damnfiles': ['messages.ini'],
+          'damnsshmanager': ['damnfiles/messages.ini'],
       },
       python_requires='>=3',
       zip_safe=False)

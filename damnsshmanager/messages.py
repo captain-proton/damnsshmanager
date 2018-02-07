@@ -1,10 +1,14 @@
 import configparser
+from pkg_resources import resource_string
 
 
 class Messages(object):
     def __init__(self):
+        content = resource_string(__name__, 'damnfiles/messages.ini')
+        content = content.decode('utf-8')
+
         self.config = configparser.ConfigParser()
-        self.config.read('damnfiles/messages.ini')
+        self.config.read_string(content)
 
     def get(self, key, *args, section='DEFAULT', **kwargs):
         """Loads given key of a section inside the messages catalogue
