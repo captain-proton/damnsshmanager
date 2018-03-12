@@ -1,12 +1,16 @@
 from setuptools import setup
 
 setup(name='damnsshmanager',
-      version='0.2.1',
+      version='0.2.2',
       description='The simplest ssh cli agent one is able to find',
       url='http://github.com/captain-proton/damnsshmanager',
       author='Nils',
       author_email='nils@hindenbug.de',
-      scripts=['bin/dsm'],
+      entry_points={
+          'console_scripts': [
+              'dsm=damnsshmanager.cli:main',
+          ],
+      },
       include_package_data=True,
       license='MIT',
       packages=['damnsshmanager'],
