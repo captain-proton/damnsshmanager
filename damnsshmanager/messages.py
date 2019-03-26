@@ -14,11 +14,11 @@ class Messages(object):
         """Loads given key of a section inside the messages catalogue
         """
         if section not in self.config:
-            print('section %s does not exist' % section)
+            print('Section %s does not exist' % section)
             return
 
         if key not in self.config[section]:
-            print('key %s not found in section %s' % (key, section))
+            print('Key %s not found in section %s' % (key, section))
 
         msg = self.config[section][key]
         return msg.format(*args, **kwargs)

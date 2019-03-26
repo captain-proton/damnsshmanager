@@ -29,9 +29,9 @@ def delete(args):
         ltun = lt.get_tunnel(args.alias)
         items = [_ for _ in [host, ltun] if _ is not None]
         if len(items) > 1:
-            print('multiple definitions for alias "%s" found' % args.alias)
+            print(__msg.get('err.msg.multi', args.alias))
         elif len(items) == 0:
-            print('not item found for alias %s' % args.alias)
+            print(__msg.get('err.msg.no.item', args.alias))
         else:
             if host is not None:
                 mod = hosts
@@ -44,16 +44,18 @@ def delete(args):
 def check_hosts():
     objs = hosts.get_all_hosts()
     if objs is None:
-        print('no ssh objects saved')
+        print(__msg.get('no.hosts'))
         return
 
-    __log_heading('Available ssh objects')
+    __log_heading(__msg.get('available.hosts'))
     for obj in objs:
         try:
             ssh.test(obj)
-            __log_host_info(obj, 'UP', status_color='\x1b[6;30;42m')
+            __log_host_info(obj, __msg.get('up'),
+                            status_color='\x1b[6;30;42m')
         except OSError:
-            __log_host_info(obj, 'DOWN', status_color='\x1b[0;30;41m')
+            __log_host_info(obj, __msg.get('down'),
+                            status_color='\x1b[0;30;41m')
 
 
 def connect(args):
@@ -62,13 +64,13 @@ def connect(args):
     if t == 'host':
         host = hosts.get_host(args.alias)
         if host is None:
-            print('no host with alias "%s"' % args.alias)
+            print(__msg.get('err.msg.no.host.alias', args.alias))
             return
         ssh.connect(host)
     elif t == 'ltun':
         ltun = lt.get_tunnel(args.alias)
         if ltun is None:
-            print('no local tunnel with alias "%s"' % args.alias)
+            print(__msg.get('err.msg.no.tun.alias', args.alias))
             return
         host = hosts.get_host(ltun.gateway)
         ssh.connect(host, ltun=ltun)
@@ -78,9 +80,9 @@ def connect(args):
             ltun = lt.get_tunnel(args.alias)
             items = [_ for _ in [host, ltun] if _ is not None]
             if len(items) > 1:
-                print('multiple definitions for alias "%s" found' % args.alias)
+                print(__msg.get('err.msg.multi', args.alias))
             elif len(items) == 0:
-                print('not item found for alias %s' % args.alias)
+                print(__msg.get('err.msg.no.item', args.alias))
             else:
                 host = host if not ltun else hosts.get_host(ltun.gateway)
                 ssh.connect(host, ltun=ltun)

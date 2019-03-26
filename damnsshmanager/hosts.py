@@ -8,6 +8,8 @@ from damnsshmanager.storage import Store
 _saved_objects_file = os.path.join(Config.app_dir, 'hosts.pickle')
 _store = Store(_saved_objects_file)
 
+__msg = Config.messages
+
 Host = namedtuple('Host', 'alias addr username port')
 
 
@@ -26,12 +28,12 @@ def __test_host_args(**kwargs):
 
     # argument validation
     if 'alias' not in kwargs:
-        return 'an "alias" is required'
+        return __msg.get('alias.required')
     if 'addr' not in kwargs:
-        return 'an "addr" is required'
+        return __msg.get('addr.required')
     host = get_host(kwargs['alias'])
     if host is not None:
-        return 'a host with alias "%s" is already present' % host.alias
+        return __msg.get('alias.present', host.alias)
     return None
 
 
@@ -54,7 +56,7 @@ def add(**kwargs):
     host = Host(alias=alias, addr=addr, username=username, port=port)
     added = _store.add(host, sort=lambda h: h.alias)
     if added:
-        print(Config.messages.get('added.host', host=host))
+        print(__msg.get('added.host', host=host))
 
 
 def delete(alias: str):
@@ -62,9 +64,9 @@ def delete(alias: str):
     deleted = _store.delete(lambda h: h.alias != alias)
     if deleted is not None:
         for h in deleted:
-            print('deleted %s' % str(h))
+            print(__msg.get('deleted', str(h)))
     else:
-        print('no host with alias "%s"' % alias)
+        print(__msg.get('err.msg.no.item', alias))
 
 
 def get_host(alias: str):

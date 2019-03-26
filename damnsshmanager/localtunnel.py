@@ -9,7 +9,7 @@ from damnsshmanager import hosts
 
 
 _store = Store(os.path.join(Config.app_dir, 'localtunnels.pickle'))
-
+__msg = Config.messages
 
 LocalTunnel = namedtuple('LocalTunnel', 'gateway alias lport destination rport')
 
@@ -18,17 +18,16 @@ def __validate_ltun_args(**kwargs):
 
     # argument validation
     if 'gateway' not in kwargs:
-        return 'a "gateway" is required'
+        return __msg.get('gateway.required')
     if 'alias' not in kwargs:
-        return 'an "alias" is required for this tunnel'
+        return __msg.get('alias.required')
     if 'remote_port' not in kwargs:
-        return 'a remote port is required'
+        return __msg.get('remote.port.required')
     if 'destination' not in kwargs:
-        return 'a "destination" (tunnel address) is required'
+        return __msg.get('destination.required')
     gateway = hosts.get_host(kwargs['gateway'])
     if gateway is None:
-        return 'a gateway with alias "%s" is required. create one!'\
-               % kwargs['gateway']
+        return __msg.get('gateway.with.alias.required', kwargs['gateway'])
     return None
 
 
@@ -70,12 +69,12 @@ def add(**kwargs):
         lports = [t.lport for t in get_all_tunnels()]
         lport = __get_open_port(exclude=lports)
         if lport == 0:
-            raise OSError(Config.messages.get('err.no.local.port'))
+            raise OSError(__msg.get('err.no.local.port'))
 
     tun = LocalTunnel(gateway=gateway, alias=alias, lport=lport,
                       destination=destination, rport=rport)
     if _store.add(tun, sort=lambda t: t.alias):
-        print(Config.messages.get('added.ltun', tunnel=tun))
+        print(__msg.get('added.ltun', tunnel=tun))
 
 
 def get_all_tunnels() -> list:
@@ -91,6 +90,6 @@ def delete(alias: str):
     deleted = _store.delete(lambda t: t.alias != alias)
     if deleted is not None:
         for t in deleted:
-            print('deleted %s' % str(t))
+            print(__msg.get('deleted', str(t)))
     else:
-        print('no tunnel with alias %s' % alias)
+        print(__msg.get('err.msg.no.item', alias))
