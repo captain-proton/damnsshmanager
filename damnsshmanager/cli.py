@@ -70,7 +70,7 @@ def connect(args):
         if ltun is None:
             print('no local tunnel with alias "%s"' % args.alias)
             return
-        host = hosts.get_host(ltun.host)
+        host = hosts.get_host(ltun.gateway)
         ssh.connect(host, ltun=ltun)
     else:
         try:
@@ -82,7 +82,7 @@ def connect(args):
             elif len(items) == 0:
                 print('not item found for alias %s' % args.alias)
             else:
-                host = host if not ltun else hosts.get_host(ltun.host)
+                host = host if not ltun else hosts.get_host(ltun.gateway)
                 ssh.connect(host, ltun=ltun)
         except UniqueException as e:
             print(e.message)
@@ -100,8 +100,8 @@ def list_objects(args):
             print(__msg.get('fmt.host', host=h))
     elif t == 'ltun':
         tunnels = lt.get_all_tunnels() or []
-        header = __msg.get('fmt.tunnel.header', 'Alias', 'Host', 'Local Port',
-                           'Tunnel Address', 'Remote Port')
+        header = __msg.get('fmt.tunnel.header', 'Alias', 'Gateway', 
+                           'Local Port', 'Destination', 'Remote Port')
         print(header)
         print(__divider(header))
         for t in tunnels:
@@ -154,14 +154,14 @@ def main():
 
     ltun_parser = sub_parsers.add_parser('ltun', help=__msg.get('ltun.help'))
     ltun_parser.add_argument('alias', type=str, help=__msg.get('alias.help'))
-    ltun_parser.add_argument('host', type=str,
-                             help=__msg.get('host.alias.help'))
+    ltun_parser.add_argument('gateway', type=str,
+                             help=__msg.get('gateway.alias.help'))
     ltun_parser.add_argument('remote_port', type=int,
                              help=__msg.get('remote.port.help'))
     ltun_parser.add_argument('--local_port', type=int,
                              help=__msg.get('local.port.help'))
-    ltun_parser.add_argument('--tun_addr', type=str, default='localhost',
-                             help=__msg.get('host.tun.help'))
+    ltun_parser.add_argument('--destination', type=str, default='localhost',
+                             help=__msg.get('tun.destination.help'))
     ltun_parser.set_defaults(func=add, module=lt)
 
     del_parser = sub_parsers.add_parser('del', help=__msg.get('del.help'))
