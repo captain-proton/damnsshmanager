@@ -53,7 +53,6 @@ class Store(object):
                 return '.'.join([self.objects_file, str(i)])
 
             def rollback(src, dst):
-                print('rolling back')
                 if os.path.exists(dst):
                     os.remove(dst)
                 if os.path.exists(src):
@@ -67,14 +66,10 @@ class Store(object):
             # move, remove and so on, otherwise just call the function
             if run_with_backup:
                 if len(candidates) > 0:
-                    print('creating backup %s' % candidates[0])
                     shutil.copy(self.objects_file, candidates[0])
-                else:
-                    print('could not create backup of %s' % self.objects_file)
                 try:
                     func_result = func(self, *args, **kwargs)
                     if func_result:
-                        print('removing backup %s' % candidates[0])
                         os.remove(candidates[0])
                     else:
                         rollback(candidates[0], self.objects_file)

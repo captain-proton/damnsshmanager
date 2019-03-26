@@ -43,8 +43,8 @@ def connect(host: Host, ltun=None):
     cmd = cmd.format(port=host.port)
 
     if ltun is not None and isinstance(ltun, LocalTunnel):
-        cmd = ' '.join([cmd, '-L {lport:d}:{tun_addr}:{rport:d}'])
-        cmd = cmd.format(lport=ltun.lport, tun_addr=ltun.tun_addr,
+        cmd = ' '.join([cmd, '-L {lport:d}:{destination}:{rport:d}'])
+        cmd = cmd.format(lport=ltun.lport, destination=ltun.destination,
                          rport=ltun.rport)
 
     cmd = ' '.join([cmd, '{user}@{hostname}'])
