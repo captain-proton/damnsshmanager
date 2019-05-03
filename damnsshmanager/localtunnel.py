@@ -28,6 +28,9 @@ def __validate_ltun_args(**kwargs):
     gateway = hosts.get_host(kwargs['gateway'])
     if gateway is None:
         return __msg.get('gateway.with.alias.required', kwargs['gateway'])
+    ltun = get_tunnel(kwargs['alias'])
+    if ltun is not None:
+        return __msg.get('alias.present', ltun.alias)
     return None
 
 
