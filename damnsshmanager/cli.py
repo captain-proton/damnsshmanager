@@ -1,11 +1,14 @@
 import argparse
+import sys
+
+from loguru import logger
 
 from damnsshmanager import hosts, ssh
 from damnsshmanager import localtunnel as lt
-from damnsshmanager.config import Config as conf
+from damnsshmanager.config import Config
 from damnsshmanager.storage import UniqueException
 
-__msg = conf.messages
+__msg = Config.messages
 
 
 def add(args):
@@ -14,7 +17,7 @@ def add(args):
     try:
         module.add(**args)
     except KeyError as e:
-        print(e)
+        logger.error(e)
 
 
 def delete(args):
@@ -29,9 +32,9 @@ def delete(args):
         ltun = lt.get_tunnel(args.alias)
         items = [_ for _ in [host, ltun] if _ is not None]
         if len(items) > 1:
-            print(__msg.get('err.msg.multi', args.alias))
+            logger.error(__msg.get('err.msg.multi', args.alias))
         elif len(items) == 0:
-            print(__msg.get('err.msg.no.item', args.alias))
+            logger.error(__msg.get('err.msg.no.item', args.alias))
         else:
             if host is not None:
                 mod = hosts
@@ -44,7 +47,7 @@ def delete(args):
 def check_hosts():
     objs = hosts.get_all_hosts()
     if objs is None:
-        print(__msg.get('no.hosts'))
+        logger.error(__msg.get('no.hosts'))
         return
 
     __log_heading(__msg.get('available.hosts'))
@@ -59,18 +62,17 @@ def check_hosts():
 
 
 def connect(args):
-
     t = args.type
     if t == 'host':
         host = hosts.get_host(args.alias)
         if host is None:
-            print(__msg.get('err.msg.no.host.alias', args.alias))
+            logger.error(__msg.get('err.msg.no.host.alias', args.alias))
             return
         ssh.connect(host)
     elif t == 'ltun':
         ltun = lt.get_tunnel(args.alias)
         if ltun is None:
-            print(__msg.get('err.msg.no.tun.alias', args.alias))
+            logger.error(__msg.get('err.msg.no.tun.alias', args.alias))
             return
         host = hosts.get_host(ltun.gateway)
         ssh.connect(host, ltun=ltun)
@@ -80,14 +82,14 @@ def connect(args):
             ltun = lt.get_tunnel(args.alias)
             items = [_ for _ in [host, ltun] if _ is not None]
             if len(items) > 1:
-                print(__msg.get('err.msg.multi', args.alias))
+                logger.error(__msg.get('err.msg.multi', args.alias))
             elif len(items) == 0:
-                print(__msg.get('err.msg.no.item', args.alias))
+                logger.error(__msg.get('err.msg.no.item', args.alias))
             else:
                 host = host if not ltun else hosts.get_host(ltun.gateway)
                 ssh.connect(host, ltun=ltun)
         except UniqueException as e:
-            print(e.message)
+            logger.error(e)
 
 
 def list_objects(args):
@@ -96,18 +98,18 @@ def list_objects(args):
         all_hosts = hosts.get_all_hosts() or []
         header = __msg.get('fmt.host.header', 'Alias', 'Username', 'Address',
                            'Port')
-        print(header)
-        print(__divider(header))
+        logger.info(header)
+        logger.info(__divider(header))
         for h in all_hosts:
-            print(__msg.get('fmt.host', host=h))
+            logger.info(__msg.get('fmt.host', host=h))
     elif t == 'ltun':
         tunnels = lt.get_all_tunnels() or []
-        header = __msg.get('fmt.tunnel.header', 'Alias', 'Gateway', 
+        header = __msg.get('fmt.tunnel.header', 'Alias', 'Gateway',
                            'Local Port', 'Destination', 'Remote Port')
-        print(header)
-        print(__divider(header))
+        logger.info(header)
+        logger.info(__divider(header))
         for t in tunnels:
-            print(__msg.get('fmt.tunnel', tunnel=t))
+            logger.info(__msg.get('fmt.tunnel', tunnel=t))
 
 
 def __divider(value):
@@ -123,20 +125,19 @@ def __log_host_info(host: hosts.Host, status: str, status_color=None):
         color, end_color = status_color, '\x1b[0m'
     else:
         color, end_color = '', ''
-    print(msg.format(color=color,
-                     end_color=end_color,
-                     status=status,
-                     alias=host.alias,
-                     addr=host.addr,
-                     username=host.username,
-                     port=host.port))
+    logger.info(msg.format(color=color,
+                           end_color=end_color,
+                           status=status,
+                           alias=host.alias,
+                           addr=host.addr,
+                           username=host.username,
+                           port=host.port))
 
 
 def __log_heading(heading: str):
-
-    print(''.join(['-' for _ in range(79)]))
-    print(' {heading:<s}'.format(heading=heading))
-    print(''.join(['-' for _ in range(79)]))
+    logger.info(''.join(['-' for _ in range(79)]))
+    logger.info(' {heading:<s}'.format(heading=heading))
+    logger.info(''.join(['-' for _ in range(79)]))
 
 
 def main():
@@ -190,11 +191,13 @@ def main():
     num_args = len(vars(args).keys())
     if num_args == 0:
         parser.print_help()
-        print('')
         check_hosts()
     else:
         args.func(args)
 
 
 if __name__ == '__main__':
+    logger.remove()
+    fmt = "{time:YYYY-MM-DD HH:mm:ss.SSS} {message}"
+    logger.add(sys.stderr, format=fmt, level="INFO")
     main()

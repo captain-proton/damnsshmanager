@@ -1,19 +1,20 @@
 [tool.poetry]
 name = "damnsshmanager"
-version = "0.1.0"
-description = "Simple cli management tool to save ssh connection settings"
+version = "0.2.3"
+description = "The simplest ssh cli agent one is able to find"
 authors = ["Nils Verheyen <nils@ungerichtet.de>"]
 license = "GNU GPLv3"
 
 [tool.poetry.dependencies]
 python = "^3.7"
+loguru = "^0.5.3"
+appdirs = "^1.4.4"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.5"
 pytest-cov = "^3.0.0"
 flake8 = "^4.0.1"
-tox = "^3.24.4"
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["setuptools>=42.0", "wheel"]
+build-backend = "setuptools.build_meta"

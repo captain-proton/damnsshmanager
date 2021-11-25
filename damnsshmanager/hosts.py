@@ -2,6 +2,7 @@ import pwd
 import os
 
 from collections import namedtuple
+from loguru import logger
 from damnsshmanager.config import Config
 from damnsshmanager.storage import Store
 
@@ -56,17 +57,17 @@ def add(**kwargs):
     host = Host(alias=alias, addr=addr, username=username, port=port)
     added = _store.add(host, sort=lambda h: h.alias)
     if added:
-        print(__msg.get('added.host', host=host))
+        logger.info(__msg.get('added.host', host=host))
 
 
 def delete(alias: str):
 
-    deleted = _store.delete(lambda h: h.alias != alias)
+    deleted = _store.delete(lambda h: h.alias == alias)
     if deleted is not None:
         for h in deleted:
-            print(__msg.get('deleted', str(h)))
+            logger.info(__msg.get('deleted', str(h)))
     else:
-        print(__msg.get('err.msg.no.item', alias))
+        logger.info(__msg.get('err.msg.no.item', alias))
 
 
 def get_host(alias: str):
