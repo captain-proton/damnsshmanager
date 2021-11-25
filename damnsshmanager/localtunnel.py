@@ -3,6 +3,7 @@ import os
 import socket
 
 from collections import namedtuple
+from loguru import logger
 from damnsshmanager.config import Config
 from damnsshmanager.storage import Store
 from damnsshmanager import hosts
@@ -77,7 +78,7 @@ def add(**kwargs):
     tun = LocalTunnel(gateway=gateway, alias=alias, lport=lport,
                       destination=destination, rport=rport)
     if _store.add(tun, sort=lambda t: t.alias):
-        print(__msg.get('added.ltun', tunnel=tun))
+        logger.info(__msg.get('added.ltun', tunnel=tun))
 
 
 def get_all_tunnels() -> list:
@@ -90,9 +91,9 @@ def get_tunnel(alias: str):
 
 def delete(alias: str):
 
-    deleted = _store.delete(lambda t: t.alias != alias)
+    deleted = _store.delete(lambda t: t.alias == alias)
     if deleted is not None:
         for t in deleted:
-            print(__msg.get('deleted', str(t)))
+            logger.info(__msg.get('deleted', str(t)))
     else:
-        print(__msg.get('err.msg.no.item', alias))
+        logger.info(__msg.get('err.msg.no.item', alias))

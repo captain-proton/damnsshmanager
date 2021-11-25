@@ -2,6 +2,9 @@ import pickle
 import os
 import shutil
 
+from loguru import logger
+from damnsshmanager.config import Config
+
 
 class UniqueException(Exception):
     """Exception raised for unique object errors
@@ -13,6 +16,9 @@ class UniqueException(Exception):
 
     def __init__(self, message):
         self.message = message
+
+    def __str__(self):
+        return self.message
 
 
 class Store(object):
@@ -32,7 +38,7 @@ class Store(object):
         """Decorator that can be used to backup this objects file.
 
         A function annotated with this decorator must return a value
-        that evaluates to True on condintional check, otherwise the
+        that evaluates to True on conditional check, otherwise the
         original file will be overridden.
 
         The backup file will be inside the same directory with a suffix
@@ -102,14 +108,18 @@ class Store(object):
         objs = list(objs) if objs else []
 
         # write new host to pickle file
-        with open(self.objects_file, 'wb') as f:
+        try:
+            with open(self.objects_file, 'wb') as f:
 
-            objs.append(obj)
-            if sort:
-                objs = sorted(objs, key=sort)
-            pickle.dump(objs, f)
-            return True
-        return False
+                objs.append(obj)
+                if sort:
+                    objs = sorted(objs, key=sort)
+                pickle.dump(objs, f)
+                return True
+        except IOError:
+            logger.error(Config.messages.get('err.msg.dump.error',
+                                             self.objects_file))
+            return False
 
     def delete(self, func):
         """Delete all objects that the given filter applies to.
@@ -118,7 +128,7 @@ class Store(object):
         -------
         from damnsshmanager.storage import Store
         store = Store('~/.damnsshmanager/hosts.pickle')
-        store.delete(lambda o: o.alias != alias)
+        store.delete(lambda o: o.alias == alias)
 
         Parameters
         ----------
@@ -135,7 +145,7 @@ class Store(object):
 
         with open(self.objects_file, 'wb') as f:
 
-            new_objects = [o for o in objs if func(o)]
+            new_objects = [o for o in objs if not func(o)]
             pickle.dump(new_objects, f)
             if len(objs) != len(new_objects):
                 return [o for o in objs if o not in new_objects]
