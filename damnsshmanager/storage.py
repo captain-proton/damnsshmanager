@@ -1,6 +1,7 @@
 import pickle
 import os
 import shutil
+from typing import Iterable
 
 from loguru import logger
 from damnsshmanager.config import Config
@@ -33,6 +34,9 @@ class Store(object):
 
     def __init__(self, objects_file):
         self.objects_file = objects_file
+
+    def __empty(self):
+        yield from ()
 
     def __backup(func):
         """Decorator that can be used to backup this objects file.
@@ -185,7 +189,7 @@ class Store(object):
                                       (size, self.objects_file))
         return None
 
-    def get(self, key=None):
+    def get(self, key=None) -> Iterable:
         """Return all objects of this store that apply to given key.
 
         Example
@@ -206,7 +210,7 @@ class Store(object):
         yielding the results or None
         """
         if not os.path.exists(self.objects_file):
-            return None
+            return self.__empty()
 
         with open(self.objects_file, 'rb') as f:
             try:
@@ -214,6 +218,6 @@ class Store(object):
                 if objs:
                     return filter(key, objs)
             except EOFError:
-                return None
+                return self.__empty()
 
-        return None
+        return self.__empty()
