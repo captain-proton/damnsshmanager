@@ -14,17 +14,6 @@ __msg = Config.messages
 Host = namedtuple('Host', 'alias addr username port')
 
 
-def __get(key, d, default=None):
-    target = dict(d)
-    result = [target[k] for k in list(target.keys()) if key == k]
-    if len(result) == 0 \
-            or result[0] is None \
-            or str(result[0]).strip() == '':
-        return default
-    else:
-        return result[0]
-
-
 def __test_host_args(**kwargs):
 
     # argument validation
@@ -51,8 +40,8 @@ def add(**kwargs):
     pw_name = None
     if len(pwuid) > 0:
         pw_name = pwuid[0]
-    username = __get('username', kwargs, default=pw_name)
-    port = __get('port', kwargs, default=22)
+    username = kwargs.get('username', pw_name)
+    port = kwargs.get('port', 22)
 
     host = Host(alias=alias, addr=addr, username=username, port=port)
     added = _store.add(host, sort=lambda h: h.alias)
@@ -75,4 +64,4 @@ def get_host(alias: str):
 
 
 def get_all_hosts() -> list:
-    return _store.get()
+    return list(_store.get())
