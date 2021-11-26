@@ -44,9 +44,11 @@ def add(**kwargs):
     port = kwargs.get('port', 22)
 
     host = Host(alias=alias, addr=addr, username=username, port=port)
-    added = _store.add(host, sort=lambda h: h.alias)
-    if added:
+    try:
+        _store.add(host, sort=lambda h: h.alias)
         logger.info(__msg.get('added.host', host=host))
+    except IOError:
+        logger.error(__msg.get('err.msg.dump.error', _store.objects_file))
 
 
 def delete(alias: str):
