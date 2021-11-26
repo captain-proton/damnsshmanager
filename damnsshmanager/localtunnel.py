@@ -76,8 +76,11 @@ def add(**kwargs):
 
     tun = LocalTunnel(gateway=gateway, alias=alias, lport=lport,
                       destination=destination, rport=rport)
-    if _store.add(tun, sort=lambda t: t.alias):
+    try:
+        _store.add(tun, sort=lambda t: t.alias)
         logger.info(__msg.get('added.ltun', tunnel=tun))
+    except IOError:
+        logger.error(__msg.get('err.msg.dump.error', _store.objects_file))
 
 
 def get_all_tunnels() -> Iterable:

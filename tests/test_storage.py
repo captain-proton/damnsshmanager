@@ -12,6 +12,20 @@ def store():
         yield s
 
 
+def test_unique_exception():
+    e = UniqueException('message')
+    assert str(e) == 'message'
+
+
+def test_empty_storage():
+
+    fd, name = tempfile.mkstemp()
+    s = Store(name)
+    objs = list(s.get(key=lambda: True))
+    os.remove(name)
+    assert not objs
+
+
 def test_add(store: Store):
     obj = {'a': 'localhost'}
     obj2 = {'b': '127.0.0.1'}

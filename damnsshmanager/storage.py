@@ -1,6 +1,7 @@
 import pickle
 import os
 import shutil
+import tempfile
 from typing import Iterable
 
 from loguru import logger
@@ -59,8 +60,6 @@ class Store(object):
         """
 
         def wrapper(self, *args, **kwargs):
-            def backup_filename(i):
-                return '.'.join([self.objects_file, str(i)])
 
             def rollback(src, dst):
                 if os.path.exists(dst):
@@ -68,27 +67,22 @@ class Store(object):
                 if os.path.exists(src):
                     shutil.move(src, dst)
 
-            candidates = [backup_filename(i) for i in range(256) if
-                          not os.path.exists(backup_filename(i))]
             run_with_backup = os.path.exists(self.objects_file)
+            if not run_with_backup:
+                return func(self, *args, **kwargs)
 
             # if a backup is required run with all the stuff of copy
             # move, remove and so on, otherwise just call the function
-            if run_with_backup:
-                if len(candidates) > 0:
-                    shutil.copy(self.objects_file, candidates[0])
+            backup_file = tempfile.TemporaryFile(mode='w+b')
+            with open(self.objects_file, 'r+b') as f:
+                shutil.copyfileobj(f, backup_file)
+                backup_file.seek(0)
+
                 try:
                     func_result = func(self, *args, **kwargs)
-                    if func_result:
-                        os.remove(candidates[0])
-                    else:
-                        rollback(candidates[0], self.objects_file)
-                except Exception as e:
-                    rollback(candidates[0], self.objects_file)
-                    raise e
-                return func_result
-            else:
-                return func(self, *args, **kwargs)
+                except IOError:
+                    rollback(backup_file.name, self.objects_file)
+            return func_result
 
         return wrapper
 
@@ -119,11 +113,10 @@ class Store(object):
                 if sort:
                     objs = sorted(objs, key=sort)
                 pickle.dump(objs, f)
-                return True
-        except IOError:
+        except IOError as e:
             logger.error(Config.messages.get('err.msg.dump.error',
                                              self.objects_file))
-            return False
+            raise e
 
     def delete(self, func):
         """Delete all objects that the given filter applies to.
