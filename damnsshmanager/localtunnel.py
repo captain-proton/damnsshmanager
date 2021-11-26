@@ -3,6 +3,7 @@ import os
 import socket
 
 from collections import namedtuple
+from typing import Iterable
 from loguru import logger
 from damnsshmanager.config import Config
 from damnsshmanager.storage import Store
@@ -62,14 +63,12 @@ def add(**kwargs):
         raise KeyError(err)
 
     # get arguments (defaults)
-    gateway = kwargs['gateway']
-    alias = kwargs['alias']
-    destination = kwargs['destination']
-    rport = kwargs['remote_port']
-    lport = 0
-    if 'local_port' in kwargs and kwargs['local_port'] is not None:
-        lport = kwargs['local_port']
-    else:
+    gateway = kwargs.get('gateway')
+    alias = kwargs.get('alias')
+    destination = kwargs.get('destination')
+    rport = kwargs.get('remote_port')
+    lport = kwargs.get('local_port')
+    if not lport:
         lports = [t.lport for t in get_all_tunnels()]
         lport = __get_open_port(exclude=lports)
         if lport == 0:
@@ -81,11 +80,11 @@ def add(**kwargs):
         logger.info(__msg.get('added.ltun', tunnel=tun))
 
 
-def get_all_tunnels() -> list:
+def get_all_tunnels() -> Iterable:
     return _store.get()
 
 
-def get_tunnel(alias: str):
+def get_tunnel(alias: str) -> LocalTunnel:
     return _store.unique(key=lambda t: t.alias == alias)
 
 
@@ -93,7 +92,7 @@ def delete(alias: str):
 
     deleted = _store.delete(lambda t: t.alias == alias)
     if deleted is not None:
-        for t in deleted:
-            logger.info(__msg.get('deleted', str(t)))
+        for d in deleted:
+            logger.info(__msg.get('deleted', str(d)))
     else:
         logger.info(__msg.get('err.msg.no.item', alias))
