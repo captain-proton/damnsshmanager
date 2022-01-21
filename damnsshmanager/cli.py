@@ -3,10 +3,13 @@ import sys
 
 from loguru import logger
 
-from damnsshmanager import hosts, ssh
+import damnsshmanager.hosts as hosts
+from damnsshmanager.ssh import ssh_connectors
+from damnsshmanager.ssh.test import test_connection
 from damnsshmanager import localtunnel as lt
 from damnsshmanager.config import Config
 from damnsshmanager.storage import UniqueException
+from damnsshmanager.ssh.factory import SSHConnectorFactory
 
 __msg = Config.messages
 
@@ -53,7 +56,7 @@ def check_hosts():
     __log_heading(__msg.get('available.hosts'))
     for obj in objs:
         try:
-            ssh.test(obj)
+            test_connection(obj)
             __log_host_info(obj, __msg.get('up'),
                             status_color='\x1b[6;30;42m')
         except OSError:
@@ -63,19 +66,21 @@ def check_hosts():
 
 def connect(args):
     t = args.type
+    factory = SSHConnectorFactory()
+    connector = factory.create(args.connector)
     if t == 'host':
         host = hosts.get_host(args.alias)
         if host is None:
             logger.error(__msg.get('err.msg.no.host.alias', args.alias))
             return
-        ssh.connect(host)
+        connector.connect(host)
     elif t == 'ltun':
         ltun = lt.get_tunnel(args.alias)
         if ltun is None:
             logger.error(__msg.get('err.msg.no.tun.alias', args.alias))
             return
         host = hosts.get_host(ltun.gateway)
-        ssh.connect(host, ltun=ltun)
+        connector.connect(host, ltun=ltun)
     else:
         try:
             host = hosts.get_host(args.alias)
@@ -87,7 +92,7 @@ def connect(args):
                 logger.error(__msg.get('err.msg.no.item', args.alias))
             else:
                 host = host if not ltun else hosts.get_host(ltun.gateway)
-                ssh.connect(host, ltun=ltun)
+                connector.connect(host, ltun=ltun)
         except UniqueException as e:
             logger.error(e)
 
@@ -185,6 +190,9 @@ def main():
                                 help=__msg.get('alias.help'))
     connect_parser.add_argument('-t', '--type', choices=['host', 'ltun'],
                                 help=__msg.get('connect.type.help'))
+    connect_parser.add_argument('-c', '--connector', choices=ssh_connectors.keys(),
+                                default=list(ssh_connectors.keys())[0],
+                                help=__msg.get('connector.type.help'))
     connect_parser.set_defaults(func=connect)
 
     args = parser.parse_args()
