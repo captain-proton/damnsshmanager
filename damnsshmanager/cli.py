@@ -4,31 +4,36 @@ import sys
 from loguru import logger
 
 import damnsshmanager.hosts as hosts
-from damnsshmanager.ssh import ssh_connectors
-from damnsshmanager.ssh.test import test_connection
 from damnsshmanager import localtunnel as lt
 from damnsshmanager.config import Config
-from damnsshmanager.storage import UniqueException
+from damnsshmanager.ssh import ssh_connectors
 from damnsshmanager.ssh.factory import SSHConnectorFactory
+from damnsshmanager.ssh.test import test_connection
+from damnsshmanager.storage import UniqueException
 
 __msg = Config.messages
 
 
 def add(args):
+    """Add a new ssh connection to the database
+
+    Args:
+        args (_type_): _description_
+    """
     args = vars(args)
     module = args['module']
     try:
         module.add(**args)
-    except KeyError as e:
-        logger.error(e)
+    except KeyError as err:
+        logger.error(err)
 
 
 def delete(args):
-    t = args.type
+    _type = args.type
     mod = None
-    if t == 'host':
+    if _type == 'host':
         mod = hosts
-    elif t == 'ltun':
+    elif _type == 'ltun':
         mod = lt
     else:
         host = hosts.get_host(args.alias)
@@ -65,16 +70,16 @@ def check_hosts():
 
 
 def connect(args):
-    t = args.type
+    _type = args.type
     factory = SSHConnectorFactory()
     connector = factory.create(args.connector)
-    if t == 'host':
+    if _type == 'host':
         host = hosts.get_host(args.alias)
         if host is None:
             logger.error(__msg.get('err.msg.no.host.alias', args.alias))
             return
         connector.connect(host)
-    elif t == 'ltun':
+    elif _type == 'ltun':
         ltun = lt.get_tunnel(args.alias)
         if ltun is None:
             logger.error(__msg.get('err.msg.no.tun.alias', args.alias))
@@ -93,13 +98,13 @@ def connect(args):
             else:
                 host = host if not ltun else hosts.get_host(ltun.gateway)
                 connector.connect(host, ltun=ltun)
-        except UniqueException as e:
-            logger.error(e)
+        except UniqueException as err:
+            logger.error(err)
 
 
 def list_objects(args):
-    t = args.type
-    if t == 'host':
+    _type = args.type
+    if _type == 'host':
         all_hosts = hosts.get_all_hosts() or []
         header = __msg.get('fmt.host.header', 'Alias', 'Username', 'Address',
                            'Port')
@@ -107,14 +112,14 @@ def list_objects(args):
         logger.info(__divider(header))
         for h in all_hosts:
             logger.info(__msg.get('fmt.host', host=h))
-    elif t == 'ltun':
+    elif _type == 'ltun':
         tunnels = lt.get_all_tunnels() or []
         header = __msg.get('fmt.tunnel.header', 'Alias', 'Gateway',
                            'Local Port', 'Destination', 'Remote Port')
         logger.info(header)
         logger.info(__divider(header))
-        for t in tunnels:
-            logger.info(__msg.get('fmt.tunnel', tunnel=t))
+        for _type in tunnels:
+            logger.info(__msg.get('fmt.tunnel', tunnel=_type))
 
 
 def __divider(value):
@@ -141,7 +146,7 @@ def __log_host_info(host: hosts.Host, status: str, status_color=None):
 
 def __log_heading(heading: str):
     logger.info(''.join(['-' for _ in range(79)]))
-    logger.info(' {heading:<s}'.format(heading=heading))
+    logger.info(f' {heading:<s}')
     logger.info(''.join(['-' for _ in range(79)]))
 
 
@@ -204,8 +209,12 @@ def main():
         args.func(args)
 
 
-if __name__ == '__main__':
+def configure_logging():
     logger.remove()
     fmt = "{time:YYYY-MM-DD HH:mm:ss.SSS} {message}"
     logger.add(sys.stderr, format=fmt, level="INFO")
+
+
+if __name__ == '__main__':
+    configure_logging()
     main()
