@@ -1,19 +1,22 @@
 import os
 import socket
 import tempfile
-import pytest
 
+import pytest
 from loguru import logger
-import damnsshmanager.localtunnel as tun
+
 import damnsshmanager.hosts as hosts
+import damnsshmanager.localtunnel as tun
 import damnsshmanager.storage as storage
 
 
 @pytest.fixture(scope="function")
 def stores():
     with tempfile.TemporaryDirectory() as tmpdir:
-        hosts_storage_file = os.path.join(tmpdir, 'damnsshmanager.host.test.store')
-        tun_storage_file = os.path.join(tmpdir, 'damnsshmanager.tun.test.store')
+        hosts_storage_file = os.path.join(
+            tmpdir, 'damnsshmanager.host.test.store')
+        tun_storage_file = os.path.join(
+            tmpdir, 'damnsshmanager.tun.test.store')
 
         hosts._store = storage.Store(hosts_storage_file)
         tun._store = storage.Store(tun_storage_file)
@@ -31,8 +34,10 @@ def test_add(stores):
 
 def test_add_multiple(stores):
     tun.add(gateway='a', alias='tun', remote_port=123, destination='localhost')
-    tun.add(gateway='a', alias='tun2', remote_port=456, destination='localhost')
-    tun.add(gateway='a', alias='tun3', remote_port=456, destination='localhost')
+    tun.add(gateway='a', alias='tun2',
+            remote_port=456, destination='localhost')
+    tun.add(gateway='a', alias='tun3',
+            remote_port=456, destination='localhost')
 
 
 def test_socket_in_use(stores):
@@ -80,27 +85,6 @@ def test_add_invalid_rport(stores):
         tun.add(gateway='a',
                 alias='tun',
                 destination='localhost')
-
-
-def test_add_all_ports_used(stores):
-    sockets = []
-    try:
-        for port in range(49152, 65536):
-            s = socket.socket()
-            try:
-                s.bind(('127.0.0.1', port))
-            except socket.error:
-                logger.warning(f'port {port} already in use')
-            sockets.append(s)
-
-        with pytest.raises(OSError):
-            tun.add(gateway='a',
-                    alias='tun',
-                    remote_port=123,
-                    destination='localhost')
-    finally:
-        for s in sockets:
-            s.close()
 
 
 def test_duplicate_add(stores):

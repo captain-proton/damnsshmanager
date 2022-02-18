@@ -1,0 +1,7 @@
+Vagrant.configure("2") do |config|
+  config.vm.box = "generic/alpine38"
+  config.vm.provision "file", source: "./damn_key.pub", destination: "~/.ssh/damn_key.pub"
+  config.vm.provision "shell", inline: <<-SHELL
+    cat /home/vagrant/.ssh/damn_key.pub >> /home/vagrant/.ssh/authorized_keys
+  SHELL
+end

@@ -13,7 +13,10 @@ setup(name='damnsshmanager',
       },
       include_package_data=True,
       license='GNU GPLv3',
-      packages=['damnsshmanager'],
+      packages=[
+          'damnsshmanager',
+          'damnsshmanager.ssh',
+      ],
       package_data={
           'damnsshmanager': ['damnfiles/messages.ini'],
       },
