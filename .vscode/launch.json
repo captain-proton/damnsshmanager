@@ -1,0 +1,31 @@
+{
+    // Verwendet IntelliSense zum Ermitteln möglicher Attribute.
+    // Zeigen Sie auf vorhandene Attribute, um die zugehörigen Beschreibungen anzuzeigen.
+    // Weitere Informationen finden Sie unter https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "PyTest all",
+            "type": "python",
+            "request": "launch",
+            "stopOnEntry": false,
+            "module": "pytest",
+            "args": [
+                "-s"
+            ],
+            "cwd": "${workspaceRoot}",
+        },
+        {
+            "name": "PyTest paramiko",
+            "type": "python",
+            "request": "launch",
+            "stopOnEntry": false,
+            "module": "pytest",
+            "args": [
+                "-s",
+                "tests/ssh/test_paramiko.py",
+            ],
+            "cwd": "${workspaceRoot}",
+        }
+    ]
+}
