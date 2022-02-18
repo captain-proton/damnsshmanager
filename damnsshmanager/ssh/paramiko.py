@@ -4,11 +4,13 @@ import os
 import socket
 import sys
 from dataclasses import dataclass
+from threading import Event
 from typing import Optional, TextIO
 
 import paramiko
 import sshtunnel
 from loguru import logger
+from paramiko import PKey
 from paramiko.py3compat import u as to_unicode
 
 from damnsshmanager.config import Config
@@ -25,7 +27,11 @@ class ParamikoConnector(SSHConnector):
     to a remote machine. The connection is kept open to provide
     an interactive shell."""
 
+    channel: paramiko.Channel = None
     input_src: TextIO = sys.stdin
+    pkey: PKey = None
+    known_hosts_path: str = os.path.expanduser("~/.ssh/known_hosts")
+    connected: Event = Event()
 
     def connect(self, host: Host, ltun: Optional[LocalTunnel] = None) -> None:
         """Open a new ssh connection to the remote host using an
@@ -38,17 +44,17 @@ class ParamikoConnector(SSHConnector):
         """
         with paramiko.SSHClient() as client:
 
-            known_hosts_path = os.path.expanduser("~/.ssh/known_hosts")
             try:
-                client.load_host_keys(known_hosts_path)
+                client.load_host_keys(self.known_hosts_path)
             except IOError:
                 logger.error(
-                    _msg.get("err.msg.io.known_hosts", known_hosts_path))
+                    _msg.get("err.msg.io.known_hosts", self.known_hosts_path))
 
             client.load_system_host_keys()
             client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             try:
                 client.connect(host.addr, port=host.port,
+                               pkey=self.pkey,
                                username=host.username)
 
                 tun = None
@@ -59,17 +65,22 @@ class ParamikoConnector(SSHConnector):
                                                     ltun.destination, ltun.rport),
                                                 local_bind_address=('', ltun.lport))
                 logger.info(_msg.get("new.interactive.shell"))
-                channel = client.invoke_shell()
-                self.open_interactive_shell(channel)
+                self.channel = client.invoke_shell()
+                self.open_interactive_shell(self.channel)
+                self.connected.set()
                 if tun:
                     tun.close()
             except paramiko.BadHostKeyException:
                 logger.error(
-                    _msg.get("err.msg.invalid.server.host.key", known_hosts_path))
+                    _msg.get("err.msg.invalid.server.host.key",
+                             self.known_hosts_path))
+                raise
             except paramiko.AuthenticationException:
                 logger.error(_msg.get("err.msg.ssh.auth", host.addr))
+                raise
             except socket.error:
                 logger.error(_msg.get("err.msg.socket"))
+                raise
 
     def open_interactive_shell(self, channel: paramiko.Channel):
         """Opens an interactive shell based on the current OS.
