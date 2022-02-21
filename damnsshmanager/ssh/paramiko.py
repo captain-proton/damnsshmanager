@@ -4,7 +4,6 @@ import os
 import socket
 import sys
 from dataclasses import dataclass, field
-from threading import Event
 from typing import Any, Optional, TextIO
 
 import paramiko
@@ -63,7 +62,7 @@ class ParamikoChannel(SSHChannel):
                                                 remote_bind_address=(
                                                     ltun.destination, ltun.rport),
                                                 local_bind_address=('', ltun.lport))
-                print(_msg.get("new.interactive.shell"))
+                logger.info(_msg.get("new.interactive.shell"))
                 self.channel = client.invoke_shell()
                 self.open_interactive_shell(self.channel)
                 if tun:
