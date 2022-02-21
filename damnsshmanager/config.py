@@ -2,7 +2,8 @@ import os
 from dataclasses import dataclass
 
 from appdirs import user_config_dir
-from damnsshmanager import messages
+
+from . import messages
 
 
 @dataclass

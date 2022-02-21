@@ -1,7 +1,6 @@
-from damnsshmanager.ssh.ssh_connector import SSHConnector
-from damnsshmanager.ssh import ssh_connectors
-from damnsshmanager.config import Config
-
+from ..config import Config
+from . import ssh_connectors
+from .ssh_connector import SSHConnector
 
 _msg = Config.messages
 

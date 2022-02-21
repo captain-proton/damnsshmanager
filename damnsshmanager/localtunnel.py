@@ -1,19 +1,20 @@
 import errno
 import os
 import socket
-
 from collections import namedtuple
 from typing import Iterable
-from loguru import logger
-from damnsshmanager.config import Config
-from damnsshmanager.storage import Store
-from damnsshmanager import hosts
 
+from loguru import logger
+
+from . import hosts
+from .config import Config
+from .storage import Store
 
 _store = Store(os.path.join(Config.app_dir, 'localtunnels.pickle'))
 __msg = Config.messages
 
-LocalTunnel = namedtuple('LocalTunnel', 'gateway alias lport destination rport')
+LocalTunnel = namedtuple(
+    'LocalTunnel', 'gateway alias lport destination rport')
 
 
 def __validate_ltun_args(**kwargs):
