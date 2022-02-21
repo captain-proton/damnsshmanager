@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "damnsshmanager"
-version = "0.2.3"
+version = "0.2.4"
 description = "The simplest ssh cli agent one is able to find"
 authors = ["Nils Verheyen <nils@ungerichtet.de>"]
 license = "GNU GPLv3"
