@@ -80,18 +80,18 @@ def list_objects(args):
         all_hosts = hosts.get_all_hosts() or []
         header = __msg.get('fmt.host.header', 'Alias', 'Username', 'Address',
                            'Port')
-        print(header)
-        print(__divider(header))
+        logger.info(header)
+        logger.info(__divider(header))
         for host in all_hosts:
-            print(__msg.get('fmt.host', host=host))
+            logger.info(__msg.get('fmt.host', host=host))
     elif _type == 'ltun':
         tunnels = lt.get_all_tunnels() or []
         header = __msg.get('fmt.tunnel.header', 'Alias', 'Gateway',
                            'Local Port', 'Destination', 'Remote Port')
-        print(header)
-        print(__divider(header))
+        logger.info(header)
+        logger.info(__divider(header))
         for _type in tunnels:
-            print(__msg.get('fmt.tunnel', tunnel=_type))
+            logger.info(__msg.get('fmt.tunnel', tunnel=_type))
 
 
 def __divider(value):
@@ -107,19 +107,19 @@ def __log_host_info(host: hosts.Host, status: str, status_color=None):
         color, end_color = status_color, '\x1b[0m'
     else:
         color, end_color = '', ''
-    print(msg.format(color=color,
-                     end_color=end_color,
-                     status=status,
-                     alias=host.alias,
-                     addr=host.addr,
-                     username=host.username,
-                     port=host.port))
+    logger.info(msg.format(color=color,
+                           end_color=end_color,
+                           status=status,
+                           alias=host.alias,
+                           addr=host.addr,
+                           username=host.username,
+                           port=host.port))
 
 
 def __log_heading(heading: str):
-    print(''.join(['-' for _ in range(79)]))
-    print(f' {heading:<s}')
-    print(''.join(['-' for _ in range(79)]))
+    logger.info(''.join(['-' for _ in range(79)]))
+    logger.info(f' {heading:<s}')
+    logger.info(''.join(['-' for _ in range(79)]))
 
 
 def main():
@@ -187,9 +187,7 @@ def main():
 
 def configure_logging():
     logger.remove()
-    fmt = ("{time} | {level: <8}"
-           " | {name: ^15} | {function: ^15}"
-           " | {message}")
+    fmt = ("{message}")
     logger.add(sys.stderr, format=fmt, level="INFO")
 
 
