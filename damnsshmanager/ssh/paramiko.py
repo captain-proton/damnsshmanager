@@ -13,10 +13,10 @@ from loguru import logger
 from paramiko import PKey
 from paramiko.py3compat import u as to_unicode
 
-from damnsshmanager.config import Config
-from damnsshmanager.hosts import Host
-from damnsshmanager.localtunnel import LocalTunnel
-from damnsshmanager.ssh.ssh_connector import SSHConnector
+from ..config import Config
+from ..hosts import Host
+from ..localtunnel import LocalTunnel
+from .ssh_connector import SSHConnector
 
 _msg = Config.messages
 
@@ -64,7 +64,7 @@ class ParamikoConnector(SSHConnector):
                                                 remote_bind_address=(
                                                     ltun.destination, ltun.rport),
                                                 local_bind_address=('', ltun.lport))
-                logger.info(_msg.get("new.interactive.shell"))
+                print(_msg.get("new.interactive.shell"))
                 self.channel = client.invoke_shell()
                 self.open_interactive_shell(self.channel)
                 self.connected.set()

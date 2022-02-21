@@ -3,13 +3,13 @@ import sys
 
 from loguru import logger
 
-import damnsshmanager.hosts as hosts
-from damnsshmanager import localtunnel as lt
-from damnsshmanager.config import Config
-from damnsshmanager.ssh import ssh_connectors
-from damnsshmanager.ssh.factory import SSHConnectorFactory
-from damnsshmanager.ssh.test import test_connection
-from damnsshmanager.storage import UniqueException
+from . import hosts
+from . import localtunnel as lt
+from .config import Config
+from .ssh import ssh_connectors
+from .ssh.factory import SSHConnectorFactory
+from .ssh.test import test_connection
+from .storage import UniqueException
 
 __msg = Config.messages
 
@@ -108,18 +108,18 @@ def list_objects(args):
         all_hosts = hosts.get_all_hosts() or []
         header = __msg.get('fmt.host.header', 'Alias', 'Username', 'Address',
                            'Port')
-        logger.info(header)
-        logger.info(__divider(header))
-        for h in all_hosts:
-            logger.info(__msg.get('fmt.host', host=h))
+        print(header)
+        print(__divider(header))
+        for host in all_hosts:
+            print(__msg.get('fmt.host', host=host))
     elif _type == 'ltun':
         tunnels = lt.get_all_tunnels() or []
         header = __msg.get('fmt.tunnel.header', 'Alias', 'Gateway',
                            'Local Port', 'Destination', 'Remote Port')
-        logger.info(header)
-        logger.info(__divider(header))
+        print(header)
+        print(__divider(header))
         for _type in tunnels:
-            logger.info(__msg.get('fmt.tunnel', tunnel=_type))
+            print(__msg.get('fmt.tunnel', tunnel=_type))
 
 
 def __divider(value):
@@ -135,22 +135,23 @@ def __log_host_info(host: hosts.Host, status: str, status_color=None):
         color, end_color = status_color, '\x1b[0m'
     else:
         color, end_color = '', ''
-    logger.info(msg.format(color=color,
-                           end_color=end_color,
-                           status=status,
-                           alias=host.alias,
-                           addr=host.addr,
-                           username=host.username,
-                           port=host.port))
+    print(msg.format(color=color,
+                     end_color=end_color,
+                     status=status,
+                     alias=host.alias,
+                     addr=host.addr,
+                     username=host.username,
+                     port=host.port))
 
 
 def __log_heading(heading: str):
-    logger.info(''.join(['-' for _ in range(79)]))
-    logger.info(f' {heading:<s}')
-    logger.info(''.join(['-' for _ in range(79)]))
+    print(''.join(['-' for _ in range(79)]))
+    print(f' {heading:<s}')
+    print(''.join(['-' for _ in range(79)]))
 
 
 def main():
+    configure_logging()
     parser = argparse.ArgumentParser(description=__msg.get('app.desc'))
 
     sub_parsers = parser.add_subparsers()
@@ -211,10 +212,11 @@ def main():
 
 def configure_logging():
     logger.remove()
-    fmt = "{time:YYYY-MM-DD HH:mm:ss.SSS} {message}"
+    fmt = ("{time} | {level: <8}"
+           " | {name: ^15} | {function: ^15}"
+           " | {message}")
     logger.add(sys.stderr, format=fmt, level="INFO")
 
 
 if __name__ == '__main__':
-    configure_logging()
     main()

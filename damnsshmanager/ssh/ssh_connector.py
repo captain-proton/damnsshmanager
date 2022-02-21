@@ -1,7 +1,7 @@
-from typing import Protocol, Optional
+from typing import Optional, Protocol
 
-from damnsshmanager.hosts import Host
-from damnsshmanager.localtunnel import LocalTunnel
+from ..hosts import Host
+from ..localtunnel import LocalTunnel
 
 
 class SSHConnector(Protocol):

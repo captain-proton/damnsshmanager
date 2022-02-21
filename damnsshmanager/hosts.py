@@ -1,10 +1,11 @@
-import pwd
 import os
-
+import pwd
 from collections import namedtuple
+
 from loguru import logger
-from damnsshmanager.config import Config
-from damnsshmanager.storage import Store
+
+from .config import Config
+from .storage import Store
 
 _saved_objects_file = os.path.join(Config.app_dir, 'hosts.pickle')
 _store = Store(_saved_objects_file)

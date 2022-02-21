@@ -1,6 +1,6 @@
 import socket
 
-from hosts import Host
+from damnsshmanager.hosts import Host
 
 
 def test_connection(host: Host):

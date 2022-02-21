@@ -2,9 +2,9 @@ import subprocess
 from dataclasses import dataclass
 from typing import Optional
 
-from damnsshmanager.hosts import Host
-from damnsshmanager.localtunnel import LocalTunnel
-from damnsshmanager.ssh.ssh_connector import SSHConnector
+from ..hosts import Host
+from ..localtunnel import LocalTunnel
+from .ssh_connector import SSHConnector
 
 
 @dataclass
