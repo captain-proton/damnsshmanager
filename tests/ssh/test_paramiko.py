@@ -1,5 +1,6 @@
 import os
 import tempfile
+import time
 from threading import Thread
 
 import pytest
@@ -28,5 +29,5 @@ def test_connect(private_key_file: str):
                                     pkey=private_key)
         t = Thread(target=lambda: connector.connect(host))
         t.start()
-        connector.connected.wait(5)
+        time.sleep(5)
         connector.channel.send('logout\x0a')
