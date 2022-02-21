@@ -3,9 +3,9 @@ with the paramiko library"""
 import os
 import socket
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from threading import Event
-from typing import Optional, TextIO
+from typing import Any, Optional, TextIO
 
 import paramiko
 import sshtunnel
@@ -16,13 +16,13 @@ from paramiko.py3compat import u as to_unicode
 from ..config import Config
 from ..hosts import Host
 from ..localtunnel import LocalTunnel
-from .ssh_connector import SSHConnector
+from .channel import SSHChannel
 
 _msg = Config.messages
 
 
 @dataclass
-class ParamikoConnector(SSHConnector):
+class ParamikoChannel(SSHChannel):
     """This connector uses the paramiko library to connect this host
     to a remote machine. The connection is kept open to provide
     an interactive shell."""
@@ -31,7 +31,6 @@ class ParamikoConnector(SSHConnector):
     input_src: TextIO = sys.stdin
     pkey: PKey = None
     known_hosts_path: str = os.path.expanduser("~/.ssh/known_hosts")
-    connected: Event = Event()
 
     def connect(self, host: Host, ltun: Optional[LocalTunnel] = None) -> None:
         """Open a new ssh connection to the remote host using an
@@ -67,7 +66,6 @@ class ParamikoConnector(SSHConnector):
                 print(_msg.get("new.interactive.shell"))
                 self.channel = client.invoke_shell()
                 self.open_interactive_shell(self.channel)
-                self.connected.set()
                 if tun:
                     tun.close()
             except paramiko.BadHostKeyException:
@@ -109,6 +107,21 @@ class PosixChannel:
 
     ssh_channel: paramiko.Channel
     input_src: TextIO = sys.stdin
+    _saved_tty_attrs: Any = field(init=False)
+
+    def __enter__(self):
+        import termios
+        import tty
+
+        self._saved_tty_attrs = termios.tcgetattr(self.input_src)
+
+        tty.setraw(self.input_src.fileno())
+        tty.setcbreak(self.input_src.fileno())
+
+    def __exit__(self, exc_type, exc_value, trace):
+        import termios
+        termios.tcsetattr(self.input_src, termios.TCSADRAIN,
+                          self._saved_tty_attrs)
 
     def open(self):
         """Open a interactive channel that constantly reads and writes
@@ -116,12 +129,8 @@ class PosixChannel:
         to local stdout.
         """
         import select
-        import termios
-        import tty
 
-        try:
-            tty.setraw(self.input_src.fileno())
-            tty.setcbreak(self.input_src.fileno())
+        with self:
 
             self.ssh_channel.settimeout(0.0)
 
@@ -148,9 +157,6 @@ class PosixChannel:
                         stop = True
                     else:
                         self.ssh_channel.send(input_char.encode())
-        finally:
-            sys_tty = termios.tcgetattr(self.input_src)
-            termios.tcsetattr(self.input_src, termios.TCSADRAIN, sys_tty)
 
 
 @dataclass

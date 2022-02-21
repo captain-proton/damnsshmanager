@@ -6,10 +6,9 @@ from loguru import logger
 from . import hosts
 from . import localtunnel as lt
 from .config import Config
-from .ssh import ssh_connectors
-from .ssh.factory import SSHConnectorFactory
+from .connect import connector_strategy_types, open_shell
+from .ssh.provider import create_channel, provider
 from .ssh.test import test_connection
-from .storage import UniqueException
 
 __msg = Config.messages
 
@@ -69,37 +68,10 @@ def check_hosts():
                             status_color='\x1b[0;30;41m')
 
 
-def connect(args):
+def open_connection(args):
     _type = args.type
-    factory = SSHConnectorFactory()
-    connector = factory.create(args.connector)
-    if _type == 'host':
-        host = hosts.get_host(args.alias)
-        if host is None:
-            logger.error(__msg.get('err.msg.no.host.alias', args.alias))
-            return
-        connector.connect(host)
-    elif _type == 'ltun':
-        ltun = lt.get_tunnel(args.alias)
-        if ltun is None:
-            logger.error(__msg.get('err.msg.no.tun.alias', args.alias))
-            return
-        host = hosts.get_host(ltun.gateway)
-        connector.connect(host, ltun=ltun)
-    else:
-        try:
-            host = hosts.get_host(args.alias)
-            ltun = lt.get_tunnel(args.alias)
-            items = [_ for _ in [host, ltun] if _ is not None]
-            if len(items) > 1:
-                logger.error(__msg.get('err.msg.multi', args.alias))
-            elif len(items) == 0:
-                logger.error(__msg.get('err.msg.no.item', args.alias))
-            else:
-                host = host if not ltun else hosts.get_host(ltun.gateway)
-                connector.connect(host, ltun=ltun)
-        except UniqueException as err:
-            logger.error(err)
+    channel = create_channel(args.provider)
+    open_shell(channel, args.alias, _type)
 
 
 def list_objects(args):
@@ -194,12 +166,15 @@ def main():
                                             help=__msg.get('connect.help'))
     connect_parser.add_argument('alias', type=str,
                                 help=__msg.get('alias.help'))
-    connect_parser.add_argument('-t', '--type', choices=['host', 'ltun'],
+    connect_parser.add_argument('-t', '--type',
+                                choices=connector_strategy_types(),
                                 help=__msg.get('connect.type.help'))
-    connect_parser.add_argument('-c', '--connector', choices=ssh_connectors.keys(),
-                                default=list(ssh_connectors.keys())[0],
-                                help=__msg.get('connector.type.help'))
-    connect_parser.set_defaults(func=connect)
+    provider_names = provider()
+    connect_parser.add_argument('-p', '--provider',
+                                choices=provider_names,
+                                default=provider_names[0],
+                                help=__msg.get('provider.type.help'))
+    connect_parser.set_defaults(func=open_connection)
 
     args = parser.parse_args()
     num_args = len(vars(args).keys())

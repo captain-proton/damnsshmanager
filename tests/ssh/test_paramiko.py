@@ -6,7 +6,7 @@ import pytest
 from paramiko import RSAKey
 
 from damnsshmanager.hosts import Host
-from damnsshmanager.ssh import ParamikoConnector
+from damnsshmanager.ssh.paramiko import ParamikoChannel
 
 
 @pytest.fixture
@@ -24,9 +24,9 @@ def test_connect(private_key_file: str):
         host = Host(alias='testhost', addr='localhost',
                     username='vagrant', port=2222)
 
-        connector = ParamikoConnector(known_hosts_path=temp_known_hosts.name,
-                                      pkey=private_key)
+        connector = ParamikoChannel(known_hosts_path=temp_known_hosts.name,
+                                    pkey=private_key)
         t = Thread(target=lambda: connector.connect(host))
         t.start()
-        connector.connected.wait(10)
+        connector.connected.wait(5)
         connector.channel.send('logout\x0a')
