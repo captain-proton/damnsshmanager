@@ -32,7 +32,7 @@ class ParamikoChannel(SSHChannel):
     pkey: PKey = None
     known_hosts_path: str = os.path.expanduser("~/.ssh/known_hosts")
 
-    def connect(self, host: Host, ltun: Optional[LocalTunnel] = None) -> None:
+    def open(self, host: Host, ltun: Optional[LocalTunnel] = None) -> None:
         """Open a new ssh connection to the remote host using an
         optional local ssh tunnel.
 
