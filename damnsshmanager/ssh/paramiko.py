@@ -191,7 +191,7 @@ class DefaultChannel:
         """
         stop = False
         while not stop:
-            data = chan.recv(256)
+            data = to_unicode(chan.recv(256))
 
             if not data:
                 data = _msg.get("bye.bye")
