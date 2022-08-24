@@ -1,6 +1,7 @@
 import os
 import pwd
 from collections import namedtuple
+from typing import Optional
 
 from loguru import logger
 
@@ -62,7 +63,7 @@ def delete(alias: str):
         logger.info(__msg.get('err.msg.no.item', alias))
 
 
-def get_host(alias: str):
+def get_host(alias: str) -> Optional[Host]:
     return _store.unique(key=lambda h: h.alias == alias)
 
 

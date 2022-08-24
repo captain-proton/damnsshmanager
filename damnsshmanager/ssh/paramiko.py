@@ -27,9 +27,9 @@ class ParamikoChannel(SSHChannel):
     to a remote machine. The connection is kept open to provide
     an interactive shell."""
 
-    channel: paramiko.Channel = None
+    channel: Optional[paramiko.Channel] = None
     input_src: TextIO = sys.stdin
-    pkey: PKey = None
+    pkey: Optional[PKey] = None
     known_hosts_path: str = os.path.expanduser("~/.ssh/known_hosts")
 
     def open(self, host: Host, ltun: Optional[LocalTunnel] = None) -> None:
@@ -196,6 +196,9 @@ class DefaultChannel:
             if not data:
                 data = _msg.get("bye.bye")
                 stop = True
+
+            if not data:
+                data = 'Missing message "bye.bye"'
 
             sys.stdout.write(data)
             sys.stdout.flush()

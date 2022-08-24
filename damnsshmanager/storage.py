@@ -2,7 +2,7 @@ import pickle
 import os
 import shutil
 import tempfile
-from typing import Iterable
+from typing import Any, Iterable, Optional
 
 from loguru import logger
 from damnsshmanager.config import Config
@@ -147,7 +147,7 @@ class Store(object):
             if len(objs) != len(new_objects):
                 return [o for o in objs if o not in new_objects]
 
-    def unique(self, key):
+    def unique(self, key) -> Optional[Any]:
         """Return the one object that matches given key function(item).
 
         Example

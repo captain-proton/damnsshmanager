@@ -9,7 +9,7 @@ class SSHChannel(Protocol):
     shell should be opened to a remote host.
     """
 
-    def open(self, host: Host, ltun: Optional[LocalTunnel]) -> None:
+    def open(self, host: Host, ltun: Optional[LocalTunnel] = None) -> None:
         """Open a new channel to target host opening an optional
         local tunnel.
 
