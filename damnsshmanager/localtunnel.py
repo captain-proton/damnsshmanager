@@ -2,7 +2,7 @@ import errno
 import os
 import socket
 from collections import namedtuple
-from typing import Iterable
+from typing import Iterable, Optional, cast
 
 from loguru import logger
 
@@ -88,7 +88,7 @@ def get_all_tunnels() -> Iterable:
     return _store.get()
 
 
-def get_tunnel(alias: str) -> LocalTunnel:
+def get_tunnel(alias: str) -> Optional[LocalTunnel]:
     return _store.unique(key=lambda t: t.alias == alias)
 
 

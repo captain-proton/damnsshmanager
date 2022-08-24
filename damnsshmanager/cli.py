@@ -1,5 +1,6 @@
 import argparse
 import sys
+from typing import Optional
 
 from loguru import logger
 
@@ -98,7 +99,7 @@ def __divider(value):
     return '-'.join(['' for _ in range(len(value))])
 
 
-def __log_host_info(host: hosts.Host, status: str, status_color=None):
+def __log_host_info(host: hosts.Host, status: Optional[str], status_color=None):
     msg = '[{color}{status:^10s}{end_color}] {alias:>15s}' \
           ' => \x1b[0;33m{username:s}\x1b[0m' \
           '@\x1b[0;37m{addr:s}\x1b[0m' \
@@ -116,7 +117,7 @@ def __log_host_info(host: hosts.Host, status: str, status_color=None):
                            port=host.port))
 
 
-def __log_heading(heading: str):
+def __log_heading(heading: Optional[str]):
     logger.info(''.join(['-' for _ in range(79)]))
     logger.info(f' {heading:<s}')
     logger.info(''.join(['-' for _ in range(79)]))

@@ -1,5 +1,5 @@
 import configparser
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pkg_resources import resource_string
 from loguru import logger
 
@@ -7,7 +7,7 @@ from loguru import logger
 @dataclass
 class Messages(object):
 
-    config: configparser.ConfigParser = None
+    config: configparser.ConfigParser = field(init=False)
 
     def __init__(self):
         content = resource_string(__name__, 'damnfiles/messages.ini')

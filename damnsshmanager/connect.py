@@ -34,7 +34,12 @@ def ltun_connector_strategy(channel: SSHChannel, alias: str):
     if ltun is None:
         logger.error(__msg.get('err.msg.no.tun.alias', alias))
         return
+
     host = hosts.get_host(ltun.gateway)
+    if host is None:
+        logger.error(__msg.get('err.msg.no.host.alias', alias))
+        return
+
     channel.open(host, ltun=ltun)
 
 
@@ -48,8 +53,7 @@ def default_connector_strategy(channel: SSHChannel, alias: str):
         elif len(items) == 0:
             logger.error(__msg.get('err.msg.no.item', alias))
         else:
-            host = host if not ltun else hosts.get_host(ltun.gateway)
-            channel.open(host, ltun=ltun)
+            ltun_connector_strategy(channel, alias)
     except UniqueException as err:
         logger.error(err)
 
@@ -68,6 +72,6 @@ def _create_connector_strategy(strategy_type: str):
     return _connector_strategies.get(strategy_type, default_connector_strategy)
 
 
-def open_shell(channel: SSHChannel, alias: str, strategy_type: str = None):
+def open_shell(channel: SSHChannel, alias: str, strategy_type: str = ''):
     strategy = _create_connector_strategy(strategy_type)
     strategy(channel, alias)

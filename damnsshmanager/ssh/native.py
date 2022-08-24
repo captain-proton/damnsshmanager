@@ -12,11 +12,9 @@ from .channel import SSHChannel
 @dataclass
 class NativeChannel(SSHChannel):
 
-    _host: Host = field(default=None, init=False)
-    _completed_process: subprocess.CompletedProcess = field(
-        default=None, init=False)
-    _proc_error: subprocess.CalledProcessError = field(
-        default=None, init=False)
+    _host: Host = field(init=False)
+    _completed_process: subprocess.CompletedProcess = field(init=False)
+    _proc_error: subprocess.CalledProcessError = field(init=False)
 
     def __enter__(self):
         ...

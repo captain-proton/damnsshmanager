@@ -3,6 +3,7 @@ with the paramiko library"""
 import os
 import socket
 import sys
+import threading
 from dataclasses import dataclass, field
 from typing import Any, Optional, TextIO
 
@@ -26,12 +27,12 @@ class ParamikoChannel(SSHChannel):
     to a remote machine. The connection is kept open to provide
     an interactive shell."""
 
-    channel: paramiko.Channel = None
+    channel: Optional[paramiko.Channel] = None
     input_src: TextIO = sys.stdin
-    pkey: PKey = None
+    pkey: Optional[PKey] = None
     known_hosts_path: str = os.path.expanduser("~/.ssh/known_hosts")
 
-    def connect(self, host: Host, ltun: Optional[LocalTunnel] = None) -> None:
+    def open(self, host: Host, ltun: Optional[LocalTunnel] = None) -> None:
         """Open a new ssh connection to the remote host using an
         optional local ssh tunnel.
 
@@ -139,23 +140,23 @@ class PosixChannel:
                     [self.ssh_channel, self.input_src], [], [])
                 if self.ssh_channel in r_list:
                     try:
-                        input_char = to_unicode(self.ssh_channel.recv(1024))
-                        if not input_char:
-                            input_char = "\r\n*** Bye bye\r\n"
+                        input_data = to_unicode(self.ssh_channel.recv(1024))
+                        if not input_data:
+                            input_data = _msg.get("bye.bye")
                             stop = True
-                        sys.stdout.write(input_char)
+                        sys.stdout.write(input_data)
                         sys.stdout.flush()
                     except socket.timeout:
                         logger.error(_msg.get("err.msg.socket.timeout"))
 
                 if self.input_src in r_list:
-                    input_char = self.input_src.read(1)
-                    logger.debug(f'read {input_char!r} from stdin,'
+                    input_data = self.input_src.read(1)
+                    logger.debug(f'read {input_data!r} from stdin,'
                                  ' type of char {type(input_char)!r}')
-                    if not input_char:
+                    if not input_data:
                         stop = True
                     else:
-                        self.ssh_channel.send(input_char.encode())
+                        self.ssh_channel.send(input_data.encode())
 
 
 @dataclass
@@ -164,4 +165,40 @@ class DefaultChannel:
     chan: paramiko.Channel
 
     def open(self):
-        pass
+
+        sys.stdout.write(_msg.get("default.chan.open.msg"))
+        writer = threading.Thread(target=DefaultChannel.writeloop,
+                                  args=(self.chan,))
+        writer.start()
+
+        try:
+            while True:
+                stdin_char = sys.stdin.read(1)
+                if not stdin_char:
+                    break
+                self.chan.send(stdin_char)
+        except EOFError:
+            # user hit ^Z or F6
+            logger.info(_msg.get("user.closed.connection"))
+
+    @staticmethod
+    def writeloop(chan):
+        """The write loop reads input from given channel
+        and writes received data to standard out.
+
+        Args:
+            chan (paramiko.Channel): channel to read from
+        """
+        stop = False
+        while not stop:
+            data = to_unicode(chan.recv(256))
+
+            if not data:
+                data = _msg.get("bye.bye")
+                stop = True
+
+            if not data:
+                data = 'Missing message "bye.bye"'
+
+            sys.stdout.write(data)
+            sys.stdout.flush()
