@@ -4,12 +4,12 @@ from typing import Optional
 
 from loguru import logger
 
-from . import hosts
-from . import localtunnel as lt
-from .config import Config
-from .connect import connector_strategy_types, open_shell
-from .ssh.provider import create_channel, provider
-from .ssh.test import test_connection
+from damnsshmanager import hosts
+from damnsshmanager import localtunnel as lt
+from damnsshmanager.config import Config
+from damnsshmanager.connect import connector_strategy_types, open_shell
+from damnsshmanager.ssh.provider import create_channel, provider
+from damnsshmanager.ssh.test import test_connection
 
 __msg = Config.messages
 

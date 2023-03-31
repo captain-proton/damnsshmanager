@@ -1,11 +1,43 @@
-import pickle
+import abc
 import os
+import pathlib
+import pickle
 import shutil
 import tempfile
-from typing import Any, Iterable, Optional
+from typing import Any, Iterable, Optional, Union
 
 from loguru import logger
+
 from damnsshmanager.config import Config
+from damnsshmanager.model import Host, LocalTunnel
+
+
+class Store(abc.ABC):
+
+    @property
+    @abc.abstractmethod
+    def object_file(self) -> pathlib.Path:
+        ...
+
+    @abc.abstractmethod
+    def __init__(self, src: pathlib.Path):
+        ...
+
+    @abc.abstractmethod
+    def add(self, obj: Union[Host, LocalTunnel], sort=None):
+        ...
+
+    @abc.abstractmethod
+    def get(self, key) -> Iterable:
+        ...
+
+    @abc.abstractmethod
+    def delete(self, obj: Union[Host, LocalTunnel]):
+        ...
+
+    @abc.abstractmethod
+    def unique(self, key) -> Optional[Any]:
+        ...
 
 
 class UniqueException(Exception):
@@ -23,71 +55,76 @@ class UniqueException(Exception):
         return self.message
 
 
-class Store(object):
+def backup(func):
+    """Decorator that can be used to backup a Store objects file.
+
+    A function annotated with this decorator must return a value
+    that evaluates to True on conditional check, otherwise the
+    original file will be overridden.
+
+    The backup file will be inside the same directory with a suffix
+    of .0 until .255 in case multiple files were found.
+
+    In case the backup could not be created, the function is called
+    as wanted and not blocked!
+
+    Parameters
+    ----------
+
+    A function that returns a value that evaluates to True or False
+    on a conditional check
+    """
+
+    def wrapper(store: Store, *args, **kwargs):
+        def rollback(src, dst):
+            if os.path.exists(dst):
+                os.remove(dst)
+            if os.path.exists(src):
+                shutil.move(src, dst)
+
+        run_with_backup = os.path.exists(store.object_file)
+        if not run_with_backup:
+            return func(*args, **kwargs)
+
+        # if a backup is required run with all the stuff of copy
+        # move, remove and so on, otherwise just call the function
+        backup_file = tempfile.TemporaryFile(mode="w+b")
+        func_result = None
+        with open(store.object_file, "r+b") as f:
+            shutil.copyfileobj(f, backup_file)
+            backup_file.seek(0)
+
+            try:
+                func_result = func(store, *args, **kwargs)
+            except IOError:
+                rollback(backup_file.name, store.object_file)
+        return func_result
+
+    return wrapper
+
+
+class PickleStore:
     """A `Store` allows crud (create, read, update, delete) operations
     on a file to persist python objects.
 
     Attributes
     ----------
-    objects_file : str
+    object_file : str
         Contains the file path that objects are stored in
     """
 
-    def __init__(self, objects_file):
-        self.objects_file = objects_file
+    def __init__(self, object_file: pathlib.Path):
+        self.__object_file = object_file
 
     def __empty(self):
         yield from ()
 
-    def __backup(func):
-        """Decorator that can be used to backup this objects file.
+    @property
+    def object_file(self):
+        return self.__object_file
 
-        A function annotated with this decorator must return a value
-        that evaluates to True on conditional check, otherwise the
-        original file will be overridden.
-
-        The backup file will be inside the same directory with a suffix
-        of .0 until .255 in case multiple files were found.
-
-        In case the backup could not be created, the function is called
-        as wanted and not blocked!
-
-        Parameters
-        ----------
-
-        A function that returns a value that evaluates to True or False
-        on a conditional check
-        """
-
-        def wrapper(self, *args, **kwargs):
-
-            def rollback(src, dst):
-                if os.path.exists(dst):
-                    os.remove(dst)
-                if os.path.exists(src):
-                    shutil.move(src, dst)
-
-            run_with_backup = os.path.exists(self.objects_file)
-            if not run_with_backup:
-                return func(self, *args, **kwargs)
-
-            # if a backup is required run with all the stuff of copy
-            # move, remove and so on, otherwise just call the function
-            backup_file = tempfile.TemporaryFile(mode='w+b')
-            with open(self.objects_file, 'r+b') as f:
-                shutil.copyfileobj(f, backup_file)
-                backup_file.seek(0)
-
-                try:
-                    func_result = func(self, *args, **kwargs)
-                except IOError:
-                    rollback(backup_file.name, self.objects_file)
-            return func_result
-
-        return wrapper
-
-    @__backup
-    def add(self, obj, sort=None):
+    @backup
+    def add(self, obj: Union[Host, LocalTunnel], sort=None):
         """Adds a new object to the store.
 
         Parameters
@@ -107,17 +144,18 @@ class Store(object):
 
         # write new host to pickle file
         try:
-            with open(self.objects_file, 'wb') as f:
+            with open(self.__object_file, "wb") as f:
 
                 objs.append(obj)
                 if sort:
                     objs = sorted(objs, key=sort)
                 pickle.dump(objs, f)
-        except IOError as e:
-            logger.error(Config.messages.get('err.msg.dump.error',
-                                             self.objects_file))
-            raise e
+        except IOError as err:
+            logger.error(Config.messages.get("err.msg.dump.error",
+                                             self.__object_file))
+            raise err
 
+    @backup
     def delete(self, func):
         """Delete all objects that the given filter applies to.
 
@@ -140,12 +178,13 @@ class Store(object):
         objs = self.get()
         objs = list(objs) if objs else []
 
-        with open(self.objects_file, 'wb') as f:
+        with open(self.__object_file, "wb") as f:
 
             new_objects = [o for o in objs if not func(o)]
             pickle.dump(new_objects, f)
             if len(objs) != len(new_objects):
                 return [o for o in objs if o not in new_objects]
+        return []
 
     def unique(self, key) -> Optional[Any]:
         """Return the one object that matches given key function(item).
@@ -177,9 +216,10 @@ class Store(object):
             size = len(objs)
             if size == 1:
                 return objs[0]
-            elif size > 1:
-                raise UniqueException('found %d objects that match in %s' %
-                                      (size, self.objects_file))
+            if size > 1:
+                raise UniqueException(
+                    f"found {{size}} objects that match in {self.__object_file}"
+                )
         return None
 
     def get(self, key=None) -> Iterable:
@@ -202,10 +242,10 @@ class Store(object):
         The result of filter(function or None, items), therefore an iterator
         yielding the results or None
         """
-        if not os.path.exists(self.objects_file):
+        if not os.path.exists(self.__object_file):
             return self.__empty()
 
-        with open(self.objects_file, 'rb') as f:
+        with open(self.__object_file, "rb") as f:
             try:
                 objs = pickle.load(f)
                 if objs:
@@ -214,3 +254,6 @@ class Store(object):
                 return self.__empty()
 
         return self.__empty()
+
+
+Store.register(PickleStore)

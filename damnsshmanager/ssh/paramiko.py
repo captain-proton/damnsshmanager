@@ -13,10 +13,9 @@ from loguru import logger
 from paramiko import PKey
 from paramiko.py3compat import u as to_unicode
 
-from ..config import Config
-from ..hosts import Host
-from ..localtunnel import LocalTunnel
-from .channel import SSHChannel
+from damnsshmanager.config import Config
+from damnsshmanager.model import LocalTunnel, Host
+from damnsshmanager.ssh.channel import SSHChannel
 
 _msg = Config.messages
 
@@ -144,8 +143,10 @@ class PosixChannel:
                         if not input_data:
                             input_data = _msg.get("bye.bye")
                             stop = True
-                        sys.stdout.write(input_data)
-                        sys.stdout.flush()
+
+                        if input_data:
+                            sys.stdout.write(input_data)
+                            sys.stdout.flush()
                     except socket.timeout:
                         logger.error(_msg.get("err.msg.socket.timeout"))
 
@@ -166,7 +167,9 @@ class DefaultChannel:
 
     def open(self):
 
-        sys.stdout.write(_msg.get("default.chan.open.msg"))
+        data = _msg.get("default.chan.open.msg")
+        if data:
+            sys.stdout.write(data)
         writer = threading.Thread(target=DefaultChannel.writeloop,
                                   args=(self.chan,))
         writer.start()
@@ -176,7 +179,7 @@ class DefaultChannel:
                 stdin_char = sys.stdin.read(1)
                 if not stdin_char:
                     break
-                self.chan.send(stdin_char)
+                self.chan.send(stdin_char.encode(encoding='utf-8'))
         except EOFError:
             # user hit ^Z or F6
             logger.info(_msg.get("user.closed.connection"))

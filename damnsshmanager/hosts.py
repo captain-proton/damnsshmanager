@@ -1,19 +1,17 @@
 import os
+import pathlib
 import pwd
-from collections import namedtuple
 from typing import Optional
 
 from loguru import logger
 
-from .config import Config
-from .storage import Store
+from damnsshmanager.config import Config
+from damnsshmanager.model import Host
+from damnsshmanager.storage import PickleStore
 
-_saved_objects_file = os.path.join(Config.app_dir, 'hosts.pickle')
-_store = Store(_saved_objects_file)
+_store = PickleStore(pathlib.Path(Config.app_dir, 'hosts.pickle'))
 
 __msg = Config.messages
-
-Host = namedtuple('Host', 'alias addr username port')
 
 
 def __test_host_args(**kwargs):
@@ -42,7 +40,9 @@ def add(**kwargs):
     pw_name = None
     if len(pwuid) > 0:
         pw_name = pwuid[0]
-    username = kwargs.get('username', pw_name)
+    username = kwargs.get('username')
+    if not username:
+        username = pw_name
     port = kwargs.get('port', 22)
 
     host = Host(alias=alias, addr=addr, username=username, port=port)
@@ -50,7 +50,7 @@ def add(**kwargs):
         _store.add(host, sort=lambda h: h.alias)
         logger.info(__msg.get('added.host', host=host))
     except IOError:
-        logger.error(__msg.get('err.msg.dump.error', _store.objects_file))
+        logger.error(__msg.get('err.msg.dump.error', _store.object_file))
 
 
 def delete(alias: str):

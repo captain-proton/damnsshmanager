@@ -1,7 +1,6 @@
 from typing import Optional, Protocol
 
-from damnsshmanager.hosts import Host
-from damnsshmanager.localtunnel import LocalTunnel
+from damnsshmanager.model import LocalTunnel, Host
 
 
 class SSHChannel(Protocol):

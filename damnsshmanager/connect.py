@@ -15,6 +15,7 @@ from loguru import logger
 from damnsshmanager import hosts
 from damnsshmanager import localtunnel as lt
 from damnsshmanager.config import Config
+from damnsshmanager.model import Host, LocalTunnel
 from damnsshmanager.ssh.provider import SSHChannel
 from damnsshmanager.storage import UniqueException
 

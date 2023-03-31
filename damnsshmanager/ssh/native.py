@@ -4,9 +4,8 @@ from typing import Optional
 
 from loguru import logger
 
-from ..hosts import Host
-from ..localtunnel import LocalTunnel
-from .channel import SSHChannel
+from damnsshmanager.model import Host, LocalTunnel
+from damnsshmanager.ssh.channel import SSHChannel
 
 
 @dataclass

@@ -1,5 +1,6 @@
 import configparser
 from dataclasses import dataclass, field
+from typing import Union
 from pkg_resources import resource_string
 from loguru import logger
 
@@ -16,7 +17,7 @@ class Messages(object):
         self.config = configparser.ConfigParser()
         self.config.read_string(content)
 
-    def get(self, key, *args, section='DEFAULT', **kwargs):
+    def get(self, key, *args, section='DEFAULT', **kwargs) -> Union[str, None]:
         """Loads given key of a section inside the messages catalogue
         """
         if section not in self.config:

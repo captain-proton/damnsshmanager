@@ -1,20 +1,17 @@
 import errno
-import os
+import pathlib
 import socket
-from collections import namedtuple
-from typing import Iterable, Optional, cast
+from typing import Iterable, Optional
 
 from loguru import logger
 
-from . import hosts
-from .config import Config
-from .storage import Store
+from damnsshmanager import hosts
+from damnsshmanager.config import Config
+from damnsshmanager.model import LocalTunnel
+from damnsshmanager.storage import PickleStore
 
-_store = Store(os.path.join(Config.app_dir, 'localtunnels.pickle'))
+_store = PickleStore(pathlib.Path(Config.app_dir, 'localtunnels.pickle'))
 __msg = Config.messages
-
-LocalTunnel = namedtuple(
-    'LocalTunnel', 'gateway alias lport destination rport')
 
 
 def __validate_ltun_args(**kwargs):
@@ -50,8 +47,8 @@ def __get_open_port(start=49152, end=65535, exclude=(0,)):
         try:
             sock.bind(("127.0.0.1", current_port))
             port = current_port
-        except socket.error as e:
-            if e.errno == errno.EADDRINUSE:
+        except socket.error as err:
+            if err.errno == errno.EADDRINUSE:
                 current_port += 1
     sock.close()
     return port
@@ -81,7 +78,7 @@ def add(**kwargs):
         _store.add(tun, sort=lambda t: t.alias)
         logger.info(__msg.get('added.ltun', tunnel=tun))
     except IOError:
-        logger.error(__msg.get('err.msg.dump.error', _store.objects_file))
+        logger.error(__msg.get('err.msg.dump.error', _store.object_file))
 
 
 def get_all_tunnels() -> Iterable:

@@ -4,7 +4,7 @@ from damnsshmanager.config import Config
 from damnsshmanager.ssh.native import NativeChannel
 from damnsshmanager.ssh.paramiko import ParamikoChannel
 
-from .channel import SSHChannel
+from damnsshmanager.ssh.channel import SSHChannel
 
 _msg = Config.messages
 _provider = {
