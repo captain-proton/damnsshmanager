@@ -21,7 +21,7 @@ from damnsshmanager.storage import UniqueException
 __msg = Config.messages
 
 
-def host_connector_strategy(channel: SSHChannel, alias: str):
+def host_connector_fn(channel: SSHChannel, alias: str):
     host = hosts.get_host(alias)
     if host is None:
         logger.error(__msg.get('err.msg.no.host.alias', alias))
@@ -29,7 +29,7 @@ def host_connector_strategy(channel: SSHChannel, alias: str):
     channel.open(host)
 
 
-def ltun_connector_strategy(channel: SSHChannel, alias: str):
+def ltun_connector_fn(channel: SSHChannel, alias: str):
     ltun = lt.get_tunnel(alias)
     if ltun is None:
         logger.error(__msg.get('err.msg.no.tun.alias', alias))
@@ -53,14 +53,15 @@ def default_connector_strategy(channel: SSHChannel, alias: str):
         elif len(items) == 0:
             logger.error(__msg.get('err.msg.no.item', alias))
         else:
-            ltun_connector_strategy(channel, alias)
+            strategy = _connector_strategies.get(items[0].__doc__)
+            strategy(channel, alias)
     except UniqueException as err:
         logger.error(err)
 
 
 _connector_strategies = {
-    'host': host_connector_strategy,
-    'ltun': ltun_connector_strategy
+    Host.__doc__: host_connector_fn,
+    LocalTunnel.__doc__: ltun_connector_fn
 }
 
 
