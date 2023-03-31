@@ -71,8 +71,11 @@ def check_hosts():
 
 def open_connection(args):
     _type = args.type
-    channel = create_channel(args.provider)
-    open_shell(channel, args.alias, _type)
+    try:
+        channel = create_channel(args.provider)
+        open_shell(channel, args.alias, _type)
+    except KeyboardInterrupt:
+        logger.info(__msg.get('err.msg.interrupted'))
 
 
 def list_objects(args):
