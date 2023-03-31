@@ -26,6 +26,35 @@
                 "tests/ssh/test_paramiko.py",
             ],
             "cwd": "${workspaceRoot}",
+        },
+        {
+            "name": "dsm list",
+            "type": "python",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "module": "damnsshmanager.cli",
+            "args": ["list"]
+        },
+        {
+            "name": "dsm add",
+            "type": "python",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "module": "damnsshmanager.cli",
+            "args": [
+                "add", "foo", "example.com",
+            ]
+        },
+        {
+            "name": "dsm c",
+            "type": "python",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "module": "damnsshmanager.cli",
+            "args": [
+                "c",
+                "semapp"
+            ]
         }
     ]
 }
