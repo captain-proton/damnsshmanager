@@ -13,7 +13,7 @@ dsm = 'damnsshmanager.cli:main'
 python = "^3.8"
 loguru = "^0.5.3"
 appdirs = "^1.4.4"
-paramiko = "^2.8.0"
+paramiko = ">=2.8,<4.0"
 sshtunnel = "^0.4.0"
 
 [tool.poetry.dev-dependencies]
